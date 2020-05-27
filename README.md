@@ -11,26 +11,18 @@ This is a port of the Modbus library for Arduino: https://github.com/smarmengol/
 - RS485 compatible.
 
 ## File structure
+```
 ├── LICENSE
-
 ├── README.md
-
 ├── ModbusF103 --> NUCLEO64-F103 Modbus Master and Slave example
-
 ├── ModbusF429 --> NUCLEO144-F429 Modbus Slave example
-
 ├── MODBUS-LIB --> Library Folder
-
     ├── Inc
-    
     │   └── Modbus.h 
-    
     └── Src
-    
         ├── Modbus.c 
-        
         └── UARTCallback.c 
-
+```
 ## How to use examples
 Examples provided for STM32CubeIDE Version: 1.3.0 https://www.st.com/en/development-tools/stm32cubeide.html.
 
