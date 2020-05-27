@@ -1,4 +1,4 @@
-# Modbus-STM32-HAL-FreeRTOS
+# Modbus library for STM32 Microcontrollers
 Modbus RTU Master and Slave library for STM32 microcontrollers 
 based on Cube HAL and FreeRTOS.
 This is a port of the Modbus library for Arduino: https://github.com/smarmengol/Modbus-Master-Slave-for-Arduino
