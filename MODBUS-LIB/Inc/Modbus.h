@@ -208,7 +208,7 @@ void ModbusEnd(); //!<finish any communication and release serial communication 
 void StartTaskModbusSlave(void *argument); //slave
 void StartTaskModbusMaster(void *argument); //master
 uint16_t calcCRC(uint8_t *Buffer, uint8_t u8length);
-
+extern uint8_t numberHandlers;
 
 
 #endif /* THIRD_PARTY_MODBUS_INC_MODBUS_H_ */

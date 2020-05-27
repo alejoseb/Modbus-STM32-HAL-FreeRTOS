@@ -669,29 +669,6 @@ int8_t getRxBuffer(modbusHandler_t *modH)
     return modH->u8BufferSize;
 }
 
-/**
- * @brief
- * This is the callback for HAL interrupt of UART TX
- *
- * @ingroup UartHandle UART HAL handler
- */
-
-void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
-{
-
-	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-
-	    int i;
-	    for (i = 0; i < numberHandlers; i++ )
-	    {
-	    	if (mHandlers[i]->port == huart )
-	    	{
-	    		xTaskNotifyFromISR(mHandlers[i]->myTaskModbusAHandle, 0, eNoAction, &xHigherPriorityTaskWoken);
-	    		break;
-	    	}
-	    }
-
-}
 
 
 /**
@@ -1159,4 +1136,8 @@ int8_t process_FC16(modbusHandler_t *modH )
 
     return u8CopyBufferSize;
 }
+
+
+
+
 
