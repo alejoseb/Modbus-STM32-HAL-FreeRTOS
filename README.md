@@ -33,15 +33,16 @@ Examples provided for STM32CubeIDE Version: 1.3.0 https://www.st.com/en/developm
 - For the ModbusF103 example, you can use external USB to serial adapters or connect the Master and Slave instances in a loopback (USART1 <--> USART3).
 - The ModbusF429 example uses the ST-Link serial port. To test this example you don't need an external USB to serial adapters.
 
-
 ## Recommended Modbus Master and Slave testing tools for Linux and Windows
 
 ### Master client Qmodbus
 Linux:    https://launchpad.net/~js-reynaud/+archive/ubuntu/qmodbus
+
 Windows:  https://sourceforge.net/projects/qmodbus/
 
 ### Slave simulator
 Linux: https://sourceforge.net/projects/pymodslave/
+
 Windows: https://sourceforge.net/projects/modrssim2/
 
 ## TODOs:
