@@ -30,8 +30,8 @@ Examples provided for STM32CubeIDE Version: 1.3.0 https://www.st.com/en/developm
 - Connect your NUCLEO board
 - Compile and start your debugging session!
 - If you need to adjust the Baud rate or any other parameter use the Cube assistant (recommended). If you change the USART you need to enable the interrupts for the selected USART. Check UARTCallback.c for more details.
-- For the ModbusF103 example, you can use external USB to serial adapters or connect the Master and Slave instances in a loopback (USART1 <--> USART3).
-- The ModbusF429 example uses the ST-Link serial port. To test this example you don't need an external USB to serial adapters.
+- For the ModbusF103 example, you can use external USB-to-serial adapters or connect the Master and Slave instances in a loopback (USART1 <--> USART3).
+- The ModbusF429 example uses the ST-Link serial port. To test this example you don't need an external USB-to-serial adapter.
 
 ## Recommended Modbus Master and Slave testing tools for Linux and Windows
 
