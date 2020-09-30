@@ -23,7 +23,7 @@ This is a port of the Modbus library for Arduino: https://github.com/smarmengol/
         ├── Modbus.c 
         └── UARTCallback.c 
 ```
-## How to use examples
+## How to use the examples
 Examples provided for STM32CubeIDE Version: 1.3.0 https://www.st.com/en/development-tools/stm32cubeide.html.
 
 - Import the examples in the STM32CubeIDE from the system folder
