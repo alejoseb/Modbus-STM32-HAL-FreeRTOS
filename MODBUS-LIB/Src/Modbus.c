@@ -356,7 +356,7 @@ int8_t SendQuery(modbusHandler_t *modH ,  modbus_t telegram )
 
 	uint8_t u8regsno, u8bytesno;
 	uint8_t  error = 0;
-	//xSemaphoreTake(modH->ModBusSphrHandle , portMAX_DELAY); //before processing the message get the semaphore
+	xSemaphoreTake(modH->ModBusSphrHandle , portMAX_DELAY); //before processing the message get the semaphore
 
 	if (modH->u8id!=0) error = ERR_NOT_MASTER;
 	if (modH->i8state != COM_IDLE) error = ERR_POLLING ;
@@ -442,6 +442,8 @@ int8_t SendQuery(modbusHandler_t *modH ,  modbus_t telegram )
 	    break;
 	}
 
+	xSemaphoreGive(modH->ModBusSphrHandle);
+
 	sendTxBuffer(modH);
 	modH->i8state = COM_WAITING;
 	modH->i8lastError = 0;
@@ -509,6 +511,8 @@ void StartTaskModbusMaster(void *argument)
 
 
 	  modH->i8lastError = u8exception;
+
+	  xSemaphoreTake(modH->ModBusSphrHandle , portMAX_DELAY); //before processing the message get the semaphore
 	  // process answer
 	  switch( modH->au8Buffer[ FUNC ] )
 	  {
@@ -533,7 +537,7 @@ void StartTaskModbusMaster(void *argument)
 	  }
 	  modH->i8state = COM_IDLE;
 
-	  //xSemaphoreGive(modH->ModBusSphrHandle); //Release the semaphore
+	  xSemaphoreGive(modH->ModBusSphrHandle); //Release the semaphore
 	  //return i8state;
 	  continue;
 	 }

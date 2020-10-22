@@ -20,6 +20,12 @@ RM := rm -rf
 -include objects.mk
 
 ifneq ($(MAKECMDGOALS),clean)
+ifneq ($(strip $(S_DEPS)),)
+-include $(S_DEPS)
+endif
+ifneq ($(strip $(S_UPPER_DEPS)),)
+-include $(S_UPPER_DEPS)
+endif
 ifneq ($(strip $(C_DEPS)),)
 -include $(C_DEPS)
 endif
@@ -45,8 +51,8 @@ ModbusF103.bin \
 all: ModbusF103.elf secondary-outputs
 
 # Tool invocations
-ModbusF103.elf: $(OBJS) $(USER_OBJS) /home/alejandro/Documents/STM32projects/Modbus-STM32-HAL-FreeRTOS/ModbusF103/STM32F103RBTX_FLASH.ld
-	arm-none-eabi-gcc -o "ModbusF103.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"/home/alejandro/Documents/STM32projects/Modbus-STM32-HAL-FreeRTOS/ModbusF103/STM32F103RBTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ModbusF103.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+ModbusF103.elf: $(OBJS) $(USER_OBJS) C:\Users\alejandro\Documents\Modbus-STM32-HAL-FreeRTOS\ModbusF103\STM32F103RBTX_FLASH.ld
+	arm-none-eabi-gcc -o "ModbusF103.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"C:\Users\alejandro\Documents\Modbus-STM32-HAL-FreeRTOS\ModbusF103\STM32F103RBTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="ModbusF103.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

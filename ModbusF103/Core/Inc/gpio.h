@@ -1,8 +1,8 @@
 /**
   ******************************************************************************
   * File Name          : gpio.h
-  * Description        : This file contains all the functions prototypes for 
-  *                      the gpio  
+  * Description        : This file contains all the functions prototypes for
+  *                      the gpio
   ******************************************************************************
   * @attention
   *
