@@ -880,7 +880,7 @@ void sendTxBuffer(modbusHandler_t *modH)
          // must wait transmission end before changing pin state
          //return RS485 transceiver to receive mode
 
-    	 #if defined(STM32H745xx) || defined(STM32H743xx)
+    	 #if defined(STM32H745xx) || defined(STM32H743xx)  || defined(STM32F303xE)
     	 while((modH->port->Instance->ISR & USART_ISR_TC) ==0 )
          #else
     	 while((modH->port->Instance->SR & USART_SR_TC) ==0 )

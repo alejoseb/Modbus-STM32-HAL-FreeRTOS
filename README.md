@@ -14,8 +14,10 @@ This is a port of the Modbus library for Arduino: https://github.com/smarmengol/
 ```
 ├── LICENSE
 ├── README.md
-├── ModbusF103 --> NUCLEO64-F103 Modbus Master and Slave example
-├── ModbusF429 --> NUCLEO144-F429 Modbus Slave example
+├── ModbusF103 --> NUCLEO64-F103RB Modbus Master and Slave example
+├── ModbusF429 --> NUCLEO144-F429ZI Modbus Slave example
+├── ModbusH743 --> NUCLEO144-H743ZI Modbus Slave example
+├── ModbusF303 --> NUCLEO64-F303RE Modbus Slave example
 ├── MODBUS-LIB --> Library Folder
     ├── Inc
     │   └── Modbus.h 
@@ -26,12 +28,23 @@ This is a port of the Modbus library for Arduino: https://github.com/smarmengol/
 ## How to use the examples
 Examples provided for STM32CubeIDE Version: 1.3.0 https://www.st.com/en/development-tools/stm32cubeide.html.
 
-- Import the examples in the STM32CubeIDE from the system folder
+- Import the examples in the STM32Cube IDE from the system folder
 - Connect your NUCLEO board
 - Compile and start your debugging session!
 - If you need to adjust the Baud rate or any other parameter use the Cube assistant (recommended). If you change the USART you need to enable the interrupts for the selected USART. Check UARTCallback.c for more details.
 - For the ModbusF103 example, you can use external USB-to-serial adapters or connect the Master and Slave instances in a loopback (USART1 <--> USART3).
 - The ModbusF429 example uses the ST-Link serial port. To test this example you don't need an external USB-to-serial adapter.
+
+## How to port to your own MCU
+- Create a new project in STM32Cube IDE
+- Configure a USART and activate the global interrupt of it
+- Configure the `Preemption priority` of USART interrupt to a lower priority (5 or higher number in a standard configuration) than your FreeRTOS scheduler. This parameter is chnaged in the NVIC configuration pane.
+- Import the Modbus library folder (MODBUS-LIB) using drag-and-drop from your host operating system to your STM32Cube IDE project
+- When asked, choose link folders and files
+- Update the include paths in the project's properties to include the `Inc` folder of MODBUS-LIB folder
+- Instantiate a new modbusHandler_t and follow the examples provided in the repository 
+- `Note:` If you use USART interrupts for other purposes you have to modify the UARTCalback.c file accordingly
+
 
 ## Recommended Modbus Master and Slave testing tools for Linux and Windows
 
