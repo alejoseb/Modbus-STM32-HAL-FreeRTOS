@@ -38,7 +38,7 @@ Examples provided for STM32CubeIDE Version: 1.3.0 https://www.st.com/en/developm
 ## How to port to your own MCU
 - Create a new project in STM32Cube IDE
 - Configure a USART and activate the global interrupt of it
-- Configure the `Preemption priority` of USART interrupt to a lower priority (5 or higher number in a standard configuration) than your FreeRTOS scheduler. This parameter is chnaged in the NVIC configuration pane.
+- Configure the `Preemption priority` of USART interrupt to a lower priority (5 or higher number in a standard configuration) than your FreeRTOS scheduler. This parameter is changed in the NVIC configuration pane.
 - Import the Modbus library folder (MODBUS-LIB) using drag-and-drop from your host operating system to your STM32Cube IDE project
 - When asked, choose link folders and files
 - Update the include paths in the project's properties to include the `Inc` folder of MODBUS-LIB folder
