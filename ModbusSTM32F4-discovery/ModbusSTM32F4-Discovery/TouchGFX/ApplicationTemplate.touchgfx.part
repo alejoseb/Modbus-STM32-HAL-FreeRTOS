@@ -1,0 +1,20 @@
+
+{
+  "Application": {
+    "Name": "STM32F429I-DISCO",
+    "TouchGfxPath": "../Middlewares/ST/touchgfx",
+    "AvailableColorDepths": [ 16 ],
+    "AvailableLCDs":
+    {
+      "16": "LCD16bpp"
+    },
+    "AvailableResolutions" : [
+      {
+        "Width": 240,
+        "Height": 320
+      }
+    ],
+    "PostGenerateTargetCommand" : "touchgfx update_project --project-file=../STM32F429I-DISCO.ioc --platform=m4"
+  },
+  "Version": "4.15.0"
+}

@@ -1,0 +1,6 @@
+[ProjectFiles]
+HeaderPath=../Drivers/BSP;
+[Groups]
+Drivers/BSP/Components=../Drivers/BSP/Components/stmpe811/stmpe811.c
+Drivers/BSP/Components=../Drivers/BSP/Components/ili9341/ili9341.c
+[Others]

@@ -3,6 +3,8 @@ Modbus RTU Master and Slave library for STM32 microcontrollers
 based on Cube HAL and FreeRTOS.
 This is a port of the Modbus library for Arduino: https://github.com/smarmengol/Modbus-Master-Slave-for-Arduino
 
+Video demo for STM32F4-dicovery board and TouchGFX: https://youtu.be/XDCQvu0LirY
+
 ## Characteristics:
 - Portable to any STM32 MCU supported by ST Cube HAL.
 - Multithread-safe implementation based on FreeRTOS. 

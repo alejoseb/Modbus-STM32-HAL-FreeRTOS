@@ -9,9 +9,8 @@
 #define THIRD_PARTY_MODBUS_INC_MODBUS_H_
 
 #include <inttypes.h>
-#include "usart.h"
+#include "main.h"
 #include <stdbool.h>
-#include "gpio.h"
 #include "FreeRTOS.h"
 #include "cmsis_os.h"
 #include "task.h"
@@ -193,7 +192,8 @@ void ModbusStart(modbusHandler_t * modH);
 void setTimeOut( uint16_t u16timeOut); //!<write communication watch-dog timer
 uint16_t getTimeOut(); //!<get communication watch-dog timer value
 bool getTimeOutState(); //!<get communication watch-dog timer state
-void ModbusQuery(modbusHandler_t * modH, modbus_t telegram ); //!<only for master
+void ModbusQuery(modbusHandler_t * modH, modbus_t telegram ); // put a query in the queue tail
+void ModbusQueryInject(modbusHandler_t * modH, modbus_t telegram); //put a query in the queue head
 //int8_t poll_master(); //!<cyclic poll for master
 //int8_t poll_slave( uint16_t *regs, uint8_t u8size ); //!<cyclic poll for slave
 uint16_t getInCnt(); //!<number of incoming messages

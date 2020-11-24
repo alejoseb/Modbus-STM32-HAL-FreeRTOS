@@ -10,7 +10,7 @@
 #include "cmsis_os.h"
 #include "task.h"
 #include "queue.h"
-#include "usart.h"
+#include "main.h"
 #include "Modbus.h"
 #include "timers.h"
 #include "semphr.h"
@@ -338,6 +338,15 @@ void ModbusQuery(modbusHandler_t * modH, modbus_t telegram )
 	xQueueSendToBack(modH->QueueTelegramHandle, &telegram, 0);
 }
 
+
+
+void ModbusQueryInject(modbusHandler_t * modH, modbus_t telegram )
+{
+	//Add the telegram to the TX Queue of Modbus
+	xQueueReset(modH->QueueTelegramHandle);
+	xQueueSendToFront(modH->QueueTelegramHandle, &telegram, 0);
+}
+
 /**
  * @brief
  * *** Only Modbus Master ***
@@ -389,13 +398,13 @@ int8_t SendQuery(modbusHandler_t *modH ,  modbus_t telegram )
 	    modH->u8BufferSize = 6;
 	    break;
 	case MB_FC_WRITE_COIL:
-	    modH->au8Buffer[ NB_HI ]      = ((modH->au16regs[0] > 0) ? 0xff : 0);
+	    modH->au8Buffer[ NB_HI ]      = (( telegram.au16reg[0]> 0) ? 0xff : 0);
 	    modH->au8Buffer[ NB_LO ]      = 0;
 	    modH->u8BufferSize = 6;
 	    break;
 	case MB_FC_WRITE_REGISTER:
-	    modH->au8Buffer[ NB_HI ]      = highByte(modH->au16regs[0]);
-	    modH->au8Buffer[ NB_LO ]      = lowByte(modH->au16regs[0]);
+	    modH->au8Buffer[ NB_HI ]      = highByte( telegram.au16reg[0]);
+	    modH->au8Buffer[ NB_LO ]      = lowByte( telegram.au16reg[0]);
 	    modH->u8BufferSize = 6;
 	    break;
 	case MB_FC_WRITE_MULTIPLE_COILS: // TODO: implement "sending coils"
@@ -416,11 +425,14 @@ int8_t SendQuery(modbusHandler_t *modH ,  modbus_t telegram )
 	    {
 	        if(i%2)
 	        {
-	            modH->au8Buffer[ modH->u8BufferSize ] = lowByte( modH->au16regs[ i/2 ] );
+	            //modH->au8Buffer[ modH->u8BufferSize ] = lowByte( modH->au16regs[ i/2 ] );
+	        	modH->au8Buffer[ modH->u8BufferSize ] = lowByte( telegram.au16reg[ i/2 ] );
 	        }
 	        else
 	        {
-	        	 modH->au8Buffer[  modH->u8BufferSize ] = highByte(  modH->au16regs[ i/2] );
+	        	 //modH->au8Buffer[  modH->u8BufferSize ] = highByte(modH->au16regs[ i/2] );
+	        	modH->au8Buffer[  modH->u8BufferSize ] = highByte( telegram.au16reg[ i/2 ] );
+
 	        }
 	        modH->u8BufferSize++;
 	    }
@@ -434,9 +446,11 @@ int8_t SendQuery(modbusHandler_t *modH ,  modbus_t telegram )
 
 	    for (uint16_t i=0; i< telegram.u16CoilsNo; i++)
 	    {
-	        modH->au8Buffer[  modH->u8BufferSize ] = highByte(  modH->au16regs[ i ] );
+	        //modH->au8Buffer[  modH->u8BufferSize ] = highByte(  modH->au16regs[ i ] );
+	        modH->au8Buffer[  modH->u8BufferSize ] = highByte(  telegram.au16reg[ i ] );
 	        modH->u8BufferSize++;
-	        modH->au8Buffer[  modH->u8BufferSize ] = lowByte(  modH->au16regs[ i ] );
+	        //modH->au8Buffer[  modH->u8BufferSize ] = lowByte(  modH->au16regs[ i ] );
+	        modH->au8Buffer[  modH->u8BufferSize ] = lowByte( telegram.au16reg[ i ] );
 	        modH->u8BufferSize++;
 	    }
 	    break;
@@ -478,6 +492,7 @@ void StartTaskModbusMaster(void *argument)
     	  modH->i8state = COM_IDLE;
     	  modH->i8lastError = NO_REPLY;
     	  modH->u16errCnt++;
+    	  xSemaphoreGive(modH->ModBusSphrHandle);
     	  continue;
       }
 
