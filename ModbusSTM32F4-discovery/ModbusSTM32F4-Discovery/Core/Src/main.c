@@ -26,7 +26,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "Components/ili9341/ili9341.h"
-#include "modbus.h"
+#include "Modbus.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/

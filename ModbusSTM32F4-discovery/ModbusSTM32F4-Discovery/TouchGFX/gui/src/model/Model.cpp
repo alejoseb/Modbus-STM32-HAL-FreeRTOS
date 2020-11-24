@@ -1,7 +1,7 @@
 #include <gui/model/Model.hpp>
 #include <gui/model/ModelListener.hpp>
 #include "main.h"
-#include "modbus.h"
+#include "Modbus.h"
 #include "cmsis_os.h"
 #include "semphr.h"
 Model::Model() : modelListener(0)

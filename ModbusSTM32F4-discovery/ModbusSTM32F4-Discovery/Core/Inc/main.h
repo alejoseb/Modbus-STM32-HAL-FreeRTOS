@@ -32,7 +32,7 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "modbus.h"
+#include "Modbus.h"
 extern modbusHandler_t ModbusH;
 extern uint16_t ModbusDATARX[8];
 extern uint16_t ModbusDATATX[8];

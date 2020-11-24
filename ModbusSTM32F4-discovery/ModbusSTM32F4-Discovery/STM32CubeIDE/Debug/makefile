@@ -73,8 +73,8 @@ STM32F429I-DISCO.bin \
 all: STM32F429I-DISCO.elf secondary-outputs
 
 # Tool invocations
-STM32F429I-DISCO.elf: $(OBJS) $(USER_OBJS) C:\Users\alejandro\Documents\Modbus-STM32-HAL-FreeRTOS\ModbusSTM32F4-discovery\ModbusSTM32F4-Discovery\STM32CubeIDE\STM32F429ZITX_FLASH.ld
-	arm-none-eabi-g++ -o "STM32F429I-DISCO.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\alejandro\Documents\Modbus-STM32-HAL-FreeRTOS\ModbusSTM32F4-discovery\ModbusSTM32F4-Discovery\STM32CubeIDE\STM32F429ZITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="STM32F429I-DISCO.map" -Wl,--gc-sections -static -LC:/Users/alejandro/Documents/Modbus-STM32-HAL-FreeRTOS/ModbusSTM32F4-discovery/ModbusSTM32F4-Discovery/Middlewares/ST/touchgfx/lib/core/cortex_m4f/gcc --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
+STM32F429I-DISCO.elf: $(OBJS) $(USER_OBJS) /home/alejandro/Documents/Modbus-STM32-HAL-FreeRTOS/ModbusSTM32F4-discovery/ModbusSTM32F4-Discovery/STM32CubeIDE/STM32F429ZITX_FLASH.ld
+	arm-none-eabi-g++ -o "STM32F429I-DISCO.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/home/alejandro/Documents/Modbus-STM32-HAL-FreeRTOS/ModbusSTM32F4-discovery/ModbusSTM32F4-Discovery/STM32CubeIDE/STM32F429ZITX_FLASH.ld" --specs=nosys.specs -Wl,-Map="STM32F429I-DISCO.map" -Wl,--gc-sections -static -L/home/alejandro/Documents/Modbus-STM32-HAL-FreeRTOS/ModbusSTM32F4-discovery/ModbusSTM32F4-Discovery/Middlewares/ST/touchgfx/lib/core/cortex_m4f/gcc --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
