@@ -20,6 +20,7 @@ Video demo for STM32F4-dicovery board and TouchGFX: https://youtu.be/XDCQvu0LirY
 ├── ModbusF429 --> NUCLEO144-F429ZI Modbus Slave example
 ├── ModbusH743 --> NUCLEO144-H743ZI Modbus Slave example
 ├── ModbusF303 --> NUCLEO64-F303RE Modbus Slave example
+├── ModbusSTM32F4-discovery -->STM32F4-discovery TouchGFX + Modbus Master example
 ├── MODBUS-LIB --> Library Folder
     ├── Inc
     │   └── Modbus.h 
