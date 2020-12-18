@@ -39,6 +39,7 @@ typedef struct
     uint16_t u16RegAdd;    /*!< Address of the first register to access at slave/s */
     uint16_t u16CoilsNo;   /*!< Number of coils or registers to access */
     uint16_t *au16reg;     /*!< Pointer to memory image in master */
+    uint32_t *u32CurrentTask; /*!< Pointer to the task that will receive notifications from Modbus */
 }
 modbus_t;
 

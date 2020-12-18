@@ -196,7 +196,6 @@ void ModbusStart(modbusHandler_t * modH)
     while (HAL_UART_GetState(modH->port) != HAL_UART_STATE_READY)
     {
     }
-
     // Receive data from serial port for Modbus using interrupt
     if(HAL_UART_Receive_IT(modH->port, &modH->dataRX, 1) != HAL_OK)
     {
@@ -334,7 +333,8 @@ void StartTaskModbusSlave(void *argument)
 
 void ModbusQuery(modbusHandler_t * modH, modbus_t telegram )
 {
-	//Add the telegram to the TX Queue of Modbus
+	//Add the telegram to the TX tail Queue of Modbus
+	telegram.u32CurrentTask = (uint32_t *) osThreadGetId();
 	xQueueSendToBack(modH->QueueTelegramHandle, &telegram, 0);
 }
 
@@ -342,8 +342,9 @@ void ModbusQuery(modbusHandler_t * modH, modbus_t telegram )
 
 void ModbusQueryInject(modbusHandler_t * modH, modbus_t telegram )
 {
-	//Add the telegram to the TX Queue of Modbus
+	//Add the telegram to the TX head Queue of Modbus
 	xQueueReset(modH->QueueTelegramHandle);
+	telegram.u32CurrentTask = (uint32_t *) osThreadGetId();
 	xQueueSendToFront(modH->QueueTelegramHandle, &telegram, 0);
 }
 
@@ -492,7 +493,7 @@ void StartTaskModbusMaster(void *argument)
     	  modH->i8state = COM_IDLE;
     	  modH->i8lastError = NO_REPLY;
     	  modH->u16errCnt++;
-    	  xSemaphoreGive(modH->ModBusSphrHandle);
+    	  xTaskNotify(telegram.u32CurrentTask, modH->i8lastError, eSetValueWithOverwrite);
     	  continue;
       }
 
@@ -507,7 +508,7 @@ void StartTaskModbusMaster(void *argument)
 		  modH->i8state = COM_IDLE;
 		  modH->i8lastError = ERR_BAD_SIZE;
 		  modH->u16errCnt++;
-		  xSemaphoreGive(modH->ModBusSphrHandle);
+		  xTaskNotify(telegram.u32CurrentTask, modH->i8lastError, eSetValueWithOverwrite);
 		  continue;
 	  }
 
@@ -515,11 +516,12 @@ void StartTaskModbusMaster(void *argument)
 
 
 	  // validate message: id, CRC, FCT, exception
-	  uint8_t u8exception = validateAnswer(modH);
+	  int8_t u8exception = validateAnswer(modH);
 	  if (u8exception != 0)
 	  {
 		 modH->i8state = COM_IDLE;
-		 xSemaphoreGive(modH->ModBusSphrHandle);
+         modH->i8lastError = u8exception;
+		 xTaskNotify(telegram.u32CurrentTask, modH->i8lastError, eSetValueWithOverwrite);
 	     continue;
 	  }
 
@@ -554,6 +556,7 @@ void StartTaskModbusMaster(void *argument)
 
 	  xSemaphoreGive(modH->ModBusSphrHandle); //Release the semaphore
 	  //return i8state;
+	  xTaskNotify(telegram.u32CurrentTask, modH->i8lastError, eSetValueWithOverwrite);
 	  continue;
 	 }
 
@@ -622,7 +625,7 @@ uint8_t validateAnswer(modbusHandler_t *modH)
     if ( calcCRC(modH->au8Buffer,  modH->u8BufferSize-2) != u16MsgCRC )
     {
     	modH->u16errCnt ++;
-        return NO_REPLY;
+        return ERR_BAD_CRC;
     }
 
     // check exception

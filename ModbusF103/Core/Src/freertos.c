@@ -154,6 +154,8 @@ void StartTaskMaster(void *argument)
   /* Infinite loop */
 	 // telegram 0: read registers
 
+  uint32_t u32NotificationValue;
+
   telegram[0].u8id = 17; // slave address
   telegram[0].u8fct = 3; // function code (this one is registers read)
   //telegram[0].u16RegAdd = 0x160; // start address in slave
@@ -170,12 +172,28 @@ void StartTaskMaster(void *argument)
   telegram[1].u16CoilsNo = 3; // number of elements (coils or registers) to read
   telegram[1].au16reg = ModbusDATA; // pointer to a memory array in the Arduino
 
+
+
   for(;;)
   {
 	  ModbusQuery(&ModbusH, telegram[0]); // make a query
+	  u32NotificationValue = ulTaskNotifyTake(pdTRUE, portMAX_DELAY); // block until query finishes
+	  if(u32NotificationValue)
+	  {
+		//handle error
+		  while(1);
+	  }
 	  osDelay(1000);
+
+
 	  ModbusDATA[0]++;
 	  ModbusQuery(&ModbusH, telegram[1]); // make a query
+	  u32NotificationValue = ulTaskNotifyTake(pdTRUE, portMAX_DELAY); // block until query finishes
+	  if(u32NotificationValue)
+	  {
+	  	//handle error
+		  while(1);
+	  }
 	  osDelay(1000);
   }
   /* USER CODE END StartTaskMaster */
