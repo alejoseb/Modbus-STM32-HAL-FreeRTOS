@@ -64,5 +64,5 @@ Windows: https://sourceforge.net/projects/modrssim2/
 ## TODOs:
 - Implement wrapper functions for Master function codes. Currently, telegrams are defined manually. 
 - Improve function documentation
-- Test with Rs485 transceivers (implemented but not tested)
+- ~~Test with Rs485 transceivers (implemented but not tested)~~ Verified with MAX485 transceivers (01/03/2021)
 - MODBUS TCP implementation
