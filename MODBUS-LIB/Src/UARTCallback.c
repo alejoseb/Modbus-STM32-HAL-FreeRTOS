@@ -31,9 +31,13 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 	   	if (mHandlers[i]->port == huart )
 	   	{
 	   		xTaskNotifyFromISR(mHandlers[i]->myTaskModbusAHandle, 0, eNoAction, &xHigherPriorityTaskWoken);
+
 	   		break;
+
 	   	}
 	}
+	portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+
 	/* Modbus RTU callback END */
 
 	/*
