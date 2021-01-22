@@ -202,12 +202,11 @@ int main(void)
    //ModbusH2.EN_Pin = LD2_Pin; // RS485 Enable
   ModbusH.u32overTime = 0;
   ModbusH.au16regs = ModbusDATARX;
-  ModbusH.u8regsize= sizeof(ModbusDATARX)/sizeof(ModbusDATARX[0]);
+  ModbusH.u16regsize= sizeof(ModbusDATARX)/sizeof(ModbusDATARX[0]);
    //Initialize Modbus library
   ModbusInit(&ModbusH);
   //Start capturing traffic on serial Port
   ModbusStart(&ModbusH);
-
 
   /* USER CODE END 2 */
 
