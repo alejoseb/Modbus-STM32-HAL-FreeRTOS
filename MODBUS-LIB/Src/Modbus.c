@@ -493,7 +493,7 @@ void StartTaskModbusMaster(void *argument)
     	  modH->i8state = COM_IDLE;
     	  modH->i8lastError = NO_REPLY;
     	  modH->u16errCnt++;
-    	  xTaskNotify(telegram.u32CurrentTask, modH->i8lastError, eSetValueWithOverwrite);
+    	  xTaskNotify((TaskHandle_t)telegram.u32CurrentTask, modH->i8lastError, eSetValueWithOverwrite);
     	  continue;
       }
 
@@ -508,7 +508,7 @@ void StartTaskModbusMaster(void *argument)
 		  modH->i8state = COM_IDLE;
 		  modH->i8lastError = ERR_BAD_SIZE;
 		  modH->u16errCnt++;
-		  xTaskNotify(telegram.u32CurrentTask, modH->i8lastError, eSetValueWithOverwrite);
+		  xTaskNotify((TaskHandle_t)telegram.u32CurrentTask, modH->i8lastError, eSetValueWithOverwrite);
 		  continue;
 	  }
 
@@ -521,7 +521,7 @@ void StartTaskModbusMaster(void *argument)
 	  {
 		 modH->i8state = COM_IDLE;
          modH->i8lastError = u8exception;
-		 xTaskNotify(telegram.u32CurrentTask, modH->i8lastError, eSetValueWithOverwrite);
+		 xTaskNotify((TaskHandle_t)telegram.u32CurrentTask, modH->i8lastError, eSetValueWithOverwrite);
 	     continue;
 	  }
 
@@ -556,7 +556,7 @@ void StartTaskModbusMaster(void *argument)
 
 	  xSemaphoreGive(modH->ModBusSphrHandle); //Release the semaphore
 	  //return i8state;
-	  xTaskNotify(telegram.u32CurrentTask, modH->i8lastError, eSetValueWithOverwrite);
+	  xTaskNotify((TaskHandle_t)telegram.u32CurrentTask, modH->i8lastError, eSetValueWithOverwrite);
 	  continue;
 	 }
 
@@ -568,7 +568,6 @@ void StartTaskModbusMaster(void *argument)
  * This method puts the slave answer into master data buffer
  *
  * @ingroup register
- * TODO: finish its implementation
  */
 void get_FC1(modbusHandler_t *modH)
 {
@@ -755,7 +754,7 @@ uint8_t validateRequest(modbusHandler_t *modH)
 
 	    // check start address & nb range
 	    uint16_t u16regs = 0;
-	    uint8_t u8regs;
+	    //uint8_t u8regs;
 	    switch ( modH->au8Buffer[ FUNC ] )
 	    {
 	    case MB_FC_READ_COILS:
@@ -763,26 +762,22 @@ uint8_t validateRequest(modbusHandler_t *modH)
 	    case MB_FC_WRITE_MULTIPLE_COILS:
 	        u16regs = word( modH->au8Buffer[ ADD_HI ], modH->au8Buffer[ ADD_LO ]) / 16;
 	        u16regs += word( modH->au8Buffer[ NB_HI ], modH->au8Buffer[ NB_LO ]) /16;
-	        u8regs = (uint8_t) u16regs;
-	        if (u8regs > modH->u8regsize) return EXC_ADDR_RANGE;
+	        if (u16regs > modH->u16regsize) return EXC_ADDR_RANGE;
 	        break;
 	    case MB_FC_WRITE_COIL:
 	        u16regs = word( modH->au8Buffer[ ADD_HI ], modH->au8Buffer[ ADD_LO ]) / 16;
-	        u8regs = (uint8_t) u16regs;
-	        if (u8regs > modH->u8regsize) return EXC_ADDR_RANGE;
+	        if (u16regs > modH->u16regsize) return EXC_ADDR_RANGE;
 	        break;
 	    case MB_FC_WRITE_REGISTER :
 	        u16regs = word( modH->au8Buffer[ ADD_HI ], modH->au8Buffer[ ADD_LO ]);
-	        u8regs = (uint8_t) u16regs;
-	        if (u8regs >modH-> u8regsize) return EXC_ADDR_RANGE;
+	        if (u16regs > modH-> u16regsize) return EXC_ADDR_RANGE;
 	        break;
 	    case MB_FC_READ_REGISTERS :
 	    case MB_FC_READ_INPUT_REGISTER :
 	    case MB_FC_WRITE_MULTIPLE_REGISTERS :
 	        u16regs = word( modH->au8Buffer[ ADD_HI ], modH->au8Buffer[ ADD_LO ]);
 	        u16regs += word( modH->au8Buffer[ NB_HI ], modH->au8Buffer[ NB_LO ]);
-	        u8regs = (uint8_t) u16regs;
-	        if (u8regs > modH->u8regsize) return EXC_ADDR_RANGE;
+	        if (u16regs > modH->u16regsize) return EXC_ADDR_RANGE;
 	        break;
 	    }
 	    return 0; // OK, no exception code thrown

@@ -1,6 +1,10 @@
 # Modbus library for STM32 Microcontrollers
 Modbus RTU Master and Slave library for STM32 microcontrollers 
 based on Cube HAL and FreeRTOS.
+
+Includes multiple examples for popular development boards including BluePill, NUCLEO-64, 
+NUCLEO-144 and Discovery Boards (Cortex-M3/M4/M7).
+
 This is a port of the Modbus library for Arduino: https://github.com/smarmengol/Modbus-Master-Slave-for-Arduino
 
 Video demo for STM32F4-dicovery board and TouchGFX: https://youtu.be/XDCQvu0LirY
@@ -16,6 +20,7 @@ Video demo for STM32F4-dicovery board and TouchGFX: https://youtu.be/XDCQvu0LirY
 ```
 ├── LICENSE
 ├── README.md
+├── ModbusBluepill --> STM32F103C8 (Bluepill) Slave example
 ├── ModbusF103 --> NUCLEO64-F103RB Modbus Master and Slave example
 ├── ModbusF429 --> NUCLEO144-F429ZI Modbus Slave example
 ├── ModbusH743 --> NUCLEO144-H743ZI Modbus Slave example
