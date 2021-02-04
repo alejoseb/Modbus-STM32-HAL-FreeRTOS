@@ -17,6 +17,9 @@
 #include "queue.h"
 #include "timers.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define T35  5
 #define MAX_BUFFER  64	//!< maximum size for the communication buffer in bytes
@@ -211,5 +214,8 @@ void StartTaskModbusMaster(void *argument); //master
 uint16_t calcCRC(uint8_t *Buffer, uint8_t u8length);
 extern uint8_t numberHandlers;
 
+#ifdef __cplusplus
+}  // extern "C"
+#endif
 
 #endif /* THIRD_PARTY_MODBUS_INC_MODBUS_H_ */
