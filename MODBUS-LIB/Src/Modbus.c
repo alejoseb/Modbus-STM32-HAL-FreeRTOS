@@ -23,6 +23,7 @@
 #define lowByte(w) ((w) & 0xff)
 #define highByte(w) ((w) >> 8)
 
+modbusHandler_t *mHandlers[MAX_M_HANDLERS];
 
 ///Queue Modbus RX
 //osMessageQueueId_t QueueModbusHandle;

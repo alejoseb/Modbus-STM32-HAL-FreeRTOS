@@ -188,7 +188,7 @@ typedef union {
 } bytesFields ;
 
 
-modbusHandler_t *mHandlers[MAX_M_HANDLERS];
+extern modbusHandler_t *mHandlers[MAX_M_HANDLERS];
 
 // Function prototypes
 void ModbusInit(modbusHandler_t * modH);
