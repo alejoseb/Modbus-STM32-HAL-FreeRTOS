@@ -349,6 +349,23 @@ void ModbusQueryInject(modbusHandler_t * modH, modbus_t telegram )
 	xQueueSendToFront(modH->QueueTelegramHandle, &telegram, 0);
 }
 
+void ModbusNotifyTransmitComplete()
+{
+	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+	int i;
+	for (i = 0; i < numberHandlers; i++ )
+	{
+	   	if (mHandlers[i]->port == huart )
+	   	{
+	   		xTaskNotifyFromISR(mHandlers[i]->myTaskModbusAHandle, 0, eNoAction, &xHigherPriorityTaskWoken);
+
+	   		break;
+
+	   	}
+	}
+	portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+}
+
 /**
  * @brief
  * *** Only Modbus Master ***

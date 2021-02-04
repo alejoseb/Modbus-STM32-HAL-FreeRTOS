@@ -198,6 +198,7 @@ uint16_t getTimeOut(); //!<get communication watch-dog timer value
 bool getTimeOutState(); //!<get communication watch-dog timer state
 void ModbusQuery(modbusHandler_t * modH, modbus_t telegram ); // put a query in the queue tail
 void ModbusQueryInject(modbusHandler_t * modH, modbus_t telegram); //put a query in the queue head
+void ModbusNotifyTransmitComplete(); //handler logic to be invoked in HAL_UART_TxCpltCallback
 //int8_t poll_master(); //!<cyclic poll for master
 //int8_t poll_slave( uint16_t *regs, uint8_t u8size ); //!<cyclic poll for slave
 uint16_t getInCnt(); //!<number of incoming messages
