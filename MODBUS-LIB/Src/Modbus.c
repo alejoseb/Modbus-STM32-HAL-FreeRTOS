@@ -27,32 +27,32 @@
 ///Queue Modbus RX
 //osMessageQueueId_t QueueModbusHandle;
 const osMessageQueueAttr_t QueueModbus_attributes = {
-       .name = "QueueModbus"
+       .name = "QueueModbusData"
 };
 
 ///Queue Modbus telegrams
 //osMessageQueueId_t QueueModbusHandle;
 const osMessageQueueAttr_t QueueTelegram_attributes = {
-       .name = "QueueTelegram"
+       .name = "QueueModbusTelegram"
 };
 
 //Task Modbus Slave
 //osThreadId_t myTaskModbusAHandle;
 const osThreadAttr_t myTaskModbusA_attributes = {
-    .name = "myTaskModbusA",
+    .name = "TaskModbusSlave",
     .priority = (osPriority_t) osPriorityNormal,
     .stack_size = 128 * 4
 };
 
-//Task Modbus Slave
+//Task Modbus Master
 //osThreadId_t myTaskModbusAHandle;
 const osThreadAttr_t myTaskModbusB_attributes = {
-    .name = "myTaskModbusB",
+    .name = "TaskModbusMaster",
     .priority = (osPriority_t) osPriorityNormal,
     .stack_size = 128 * 4
 };
 
-//Sempahore to access the Modbus Data
+//Semaphore to access the Modbus Data
 const osSemaphoreAttr_t ModBusSphr_attributes = {
     .name = "ModBusSphr"
 };
@@ -147,7 +147,6 @@ void ModbusInit(modbusHandler_t * modH)
 		  while(1); //Error Modbus type not supported choose a valid Type
 	  }
 	  //Create Semaphore DataRX
-	  //vSemaphoreCreateBinary(SemaphoreDataRX);
 	  //Create timer T35
 
 	  modH->xTimerT35 = xTimerCreate("TimerT35",         // Just a text name, not used by the kernel.
@@ -211,7 +210,7 @@ void ModbusStart(modbusHandler_t * modH)
 
 void vTimerCallbackT35(TimerHandle_t *pxTimer)
 {
-	//Notify that a steam has just arrived
+	//Notify that a stream has just arrived
 	int i;
 	//TimerHandle_t aux;
 	for(i = 0; i < numberHandlers; i++)
@@ -230,7 +229,7 @@ void vTimerCallbackT35(TimerHandle_t *pxTimer)
 
 void vTimerCallbackTimeout(TimerHandle_t *pxTimer)
 {
-	//Notify that a steam has just arrived
+	//Notify that a stream has just arrived
 	int i;
 	//TimerHandle_t aux;
 	for(i = 0; i < numberHandlers; i++)
@@ -426,12 +425,10 @@ int8_t SendQuery(modbusHandler_t *modH ,  modbus_t telegram )
 	    {
 	        if(i%2)
 	        {
-	            //modH->au8Buffer[ modH->u8BufferSize ] = lowByte( modH->au16regs[ i/2 ] );
 	        	modH->au8Buffer[ modH->u8BufferSize ] = lowByte( telegram.au16reg[ i/2 ] );
 	        }
 	        else
 	        {
-	        	 //modH->au8Buffer[  modH->u8BufferSize ] = highByte(modH->au16regs[ i/2] );
 	        	modH->au8Buffer[  modH->u8BufferSize ] = highByte( telegram.au16reg[ i/2 ] );
 
 	        }
@@ -447,10 +444,9 @@ int8_t SendQuery(modbusHandler_t *modH ,  modbus_t telegram )
 
 	    for (uint16_t i=0; i< telegram.u16CoilsNo; i++)
 	    {
-	        //modH->au8Buffer[  modH->u8BufferSize ] = highByte(  modH->au16regs[ i ] );
+
 	        modH->au8Buffer[  modH->u8BufferSize ] = highByte(  telegram.au16reg[ i ] );
 	        modH->u8BufferSize++;
-	        //modH->au8Buffer[  modH->u8BufferSize ] = lowByte(  modH->au16regs[ i ] );
 	        modH->au8Buffer[  modH->u8BufferSize ] = lowByte( telegram.au16reg[ i ] );
 	        modH->u8BufferSize++;
 	    }
@@ -692,30 +688,7 @@ int8_t getRxBuffer(modbusHandler_t *modH)
 
 
 
-/**
- * @brief
- * This is the callback for HAL interrupt of UART RX
- *
- * @ingroup UartHandle UART HAL handler
- */
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *UartHandle)
-{
-	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
-    int i;
-    for (i = 0; i < numberHandlers; i++ )
-    {
-    	if (mHandlers[i]->port == UartHandle  )
-    	{
-    		xQueueSendToBackFromISR( mHandlers[i]->QueueModbusHandle, &mHandlers[i]->dataRX, pdFALSE);
-    		HAL_UART_Receive_IT(mHandlers[i]->port, &mHandlers[i]->dataRX, 1);
-    		xTimerResetFromISR(mHandlers[i]->xTimerT35, &xHigherPriorityTaskWoken);
-    		break;
-    	}
-    }
-
-
-}
 
 /**
  * @brief

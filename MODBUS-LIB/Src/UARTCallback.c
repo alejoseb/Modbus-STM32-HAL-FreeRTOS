@@ -23,7 +23,7 @@
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
-	/* Modbus RTU callback BEGIN */
+	/* Modbus RTU TX callback BEGIN */
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 	int i;
 	for (i = 0; i < numberHandlers; i++ )
@@ -38,7 +38,44 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 	}
 	portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 
-	/* Modbus RTU callback END */
+	/* Modbus RTU TX callback END */
+
+	/*
+	 * Here you should implement the callback code for other UARTs not used by Modbus
+	 *
+	 * */
+
+}
+
+
+
+/**
+ * @brief
+ * This is the callback for HAL interrupt of UART RX
+ * This callback is shared among all UARTS, if more interrupts are used
+ * user should implement the correct control flow and verification to maintain
+ * Modbus functionality.
+ * @ingroup UartHandle UART HAL handler
+ */
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *UartHandle)
+{
+	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+	/* Modbus RTU RX callback BEGIN */
+    int i;
+    for (i = 0; i < numberHandlers; i++ )
+    {
+    	if (mHandlers[i]->port == UartHandle  )
+    	{
+    		xQueueSendToBackFromISR( mHandlers[i]->QueueModbusHandle, &mHandlers[i]->dataRX, pdFALSE);
+    		HAL_UART_Receive_IT(mHandlers[i]->port, &mHandlers[i]->dataRX, 1);
+    		xTimerResetFromISR(mHandlers[i]->xTimerT35, &xHigherPriorityTaskWoken);
+    		break;
+    	}
+    }
+    portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+
+	/* Modbus RTU RX callback END */
 
 	/*
 	 * Here you should implement the callback code for other UARTs not used by Modbus
