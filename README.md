@@ -55,7 +55,7 @@ To use this example, you need to activate the USB-CDC in the following line in M
 https://github.com/alejoseb/Modbus-STM32-HAL-FreeRTOS/blob/1d98194b3f0643edad694bf85cef9b25189204a5/MODBUS-LIB/Inc/Modbus.h#L21
 
 
-Modbus instances over USART and USB-CDC  can run simulataneouly in Master or Slave modes indistinctively.
+Modbus instances over USART and USB-CDC  can run simultaneously in Master or Slave modes concurrently. It is restricted to 1 USB-CDC interface and 3 USART interfaces for the Bluepill Board.
 
 
 ## How to port to your own MCU
