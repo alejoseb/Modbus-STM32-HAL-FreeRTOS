@@ -45,13 +45,14 @@ Examples provided for STM32CubeIDE Version: 1.3.0 https://www.st.com/en/developm
 - Import the examples in the STM32Cube IDE from the system folder
 - Connect your NUCLEO board
 - Compile and start your debugging session!
-- If you need to adjust the Baud rate or any other parameter use the Cube assistant (recommended). If you change the USART port you need to enable the interrupts for the selected USART. Check UARTCallback.c for more details.
+- If you need to adjust the Baud rate or any other parameter use the Cube-MX assistant (recommended). If you change the USART port you need to enable the interrupts for the selected USART. Check UARTCallback.c for more details.
 - For the ModbusF103 example, you need and extra USB-to-serial adapter, or you can connect the Master and Slave instances in a loopback (USART1 <--> USART3).
 
 ### NOTE:
 The USB-CDC example supports only the Bluepill development board. It has not been validated with other development boards.
 To use this example, you need to activate the USB-CDC in the following line in Modbus.h file:
 
+https://github.com/alejoseb/Modbus-STM32-HAL-FreeRTOS/blob/1d98194b3f0643edad694bf85cef9b25189204a5/MODBUS-LIB/Inc/Modbus.h#L21
 
 
 Modbus instances over USART and USB-CDC  can run simulataneouly in Master or Slave modes indistinctively.
@@ -60,12 +61,12 @@ Modbus instances over USART and USB-CDC  can run simulataneouly in Master or Sla
 ## How to port to your own MCU
 - Create a new project in STM32Cube IDE
 - Configure a USART and activate the global interrupt of it
-- Configure the `Preemption priority` of USART interrupt to a lower priority (5 or higher number for a standard configuration) than your FreeRTOS scheduler. This parameter is changed in the NVIC configuration pane.
+- Configure the `Preemption priority` of USART interrupt to a lower priority (5 or a higher number for a standard configuration) than your FreeRTOS scheduler. This parameter is changed in the NVIC configuration pane.
 - Import the Modbus library folder (MODBUS-LIB) using drag-and-drop from your host operating system to your STM32Cube IDE project
 - When asked, choose link folders and files
 - Update the include paths in the project's properties to include the `Inc` folder of MODBUS-LIB folder
-- Instantiate a new modbusHandler_t and follow the examples provided in the repository 
-- `Note:` If you use USART interrupts for other purposes you have to modify the UARTCalback.c file accordingly
+- Instantiate a new global modbusHandler_t and follow the examples provided in the repository 
+- `Note:` If the USART interrupts service for other purposes you have to modify the UARTCalback.c file accordingly
 
 
 ## Recommended Modbus Master and Slave testing tools for Linux and Windows
@@ -81,7 +82,7 @@ Linux: https://sourceforge.net/projects/pymodslave/
 Windows: https://sourceforge.net/projects/modrssim2/
 
 ## TODOs:
-- Improve the queue for data reception, the current method is too heavy it shoudl be replaced with a simple buffer, a stream or another FreeRTOS primitive.
+- Improve the queue for data reception; the current method is too heavy it should be replaced with a simple buffer, a stream, or another FreeRTOS primitive.
 - Implement wrapper functions for Master function codes. Currently, telegrams are defined manually. 
 - Improve function documentation
 - ~~Test with Rs485 transceivers (implemented but not tested)~~ Verified with MAX485 transceivers (01/03/2021)
