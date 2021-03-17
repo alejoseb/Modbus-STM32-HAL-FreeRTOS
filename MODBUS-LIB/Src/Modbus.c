@@ -24,6 +24,8 @@
 #define highByte(w) ((w) >> 8)
 
 
+
+
 ///Queue Modbus RX
 //osMessageQueueId_t QueueModbusHandle;
 const osMessageQueueAttr_t QueueModbus_attributes = {
@@ -180,7 +182,8 @@ void ModbusInit(modbusHandler_t * modH)
  */
 void ModbusStart(modbusHandler_t * modH)
 {
-    if (modH->EN_Port != NULL )
+
+	if (modH->EN_Port != NULL )
     {
         // return RS485 transceiver to transmit mode
     	HAL_GPIO_WritePin(modH->EN_Port, modH->EN_Pin, GPIO_PIN_RESET);
@@ -205,7 +208,29 @@ void ModbusStart(modbusHandler_t * modH)
 
     modH->u8lastRec = modH->u8BufferSize = 0;
     modH->u16InCnt = modH->u16OutCnt = modH->u16errCnt = 0;
+#if ENABLE_USB_CDC ==1
+    modH->u8TypeHW = USART_HW;
+#endif
 }
+
+#if ENABLE_USB_CDC == 1
+extern void MX_USB_DEVICE_Init(void);
+void ModbusStartCDC(modbusHandler_t * modH)
+{
+
+
+    if (modH->uiModbusType == SLAVE_RTU &&  modH->au16regs == NULL )
+    {
+    	while(1); //ERROR define the DATA pointer shared through Modbus
+    }
+
+   // MX_USB_DEVICE_Init();
+
+    modH->u8lastRec = modH->u8BufferSize = 0;
+    modH->u16InCnt = modH->u16OutCnt = modH->u16errCnt = 0;
+    modH->u8TypeHW = USB_CDC_HW;
+}
+#endif
 
 
 void vTimerCallbackT35(TimerHandle_t *pxTimer)
@@ -248,23 +273,39 @@ void StartTaskModbusSlave(void *argument)
 {
 
   modbusHandler_t *modH =  (modbusHandler_t *)argument;
+  int8_t i8state;
 
   for(;;)
   {
 	  ulTaskNotifyTake(pdTRUE, portMAX_DELAY); /* Block indefinitely until a Modbus Frame arrives */
 
 	  modH->i8lastError = 0;
+
+#if ENABLE_USB_CDC ==1
+	  i8state = modH->u8BufferSize;
+	  if (i8state == ERR_BUFF_OVERFLOW)
+	  {
+		  modH->i8lastError = ERR_BUFF_OVERFLOW;
+		  modH->u16errCnt++;
+		  continue;
+	  }
+
+#else
+
 	  modH->u8BufferSize = uxQueueMessagesWaiting(modH->QueueModbusHandle);
 	  if (modH->EN_Port != NULL )
 	  {
-	     	HAL_GPIO_WritePin(modH->EN_Port, modH->EN_Pin, GPIO_PIN_RESET); // is this required?
+	   	HAL_GPIO_WritePin(modH->EN_Port, modH->EN_Pin, GPIO_PIN_RESET); // is this required?
 	  }
+ 	  i8state = getRxBuffer(modH);
 
-	  int8_t i8state = getRxBuffer(modH);
+#endif
+
 
 	  if (i8state < 7){
 		  //The size of the frame is invalid
-		  modH->i8lastError = ERR_BAD_SIZE;;
+		  modH->i8lastError = ERR_BAD_SIZE;
+		  modH->u16errCnt++;
 		  xQueueGenericReset(modH->QueueModbusHandle, pdFALSE);
 		  continue;
 	  }
@@ -333,8 +374,14 @@ void StartTaskModbusSlave(void *argument)
 void ModbusQuery(modbusHandler_t * modH, modbus_t telegram )
 {
 	//Add the telegram to the TX tail Queue of Modbus
+	if (modH->uiModbusType == MASTER_RTU)
+	{
 	telegram.u32CurrentTask = (uint32_t *) osThreadGetId();
 	xQueueSendToBack(modH->QueueTelegramHandle, &telegram, 0);
+	}
+	else{
+		while(1);// error a master slave cannot send queries
+	}
 }
 
 
@@ -472,6 +519,7 @@ void StartTaskModbusMaster(void *argument)
   modbusHandler_t *modH =  (modbusHandler_t *)argument;
   uint32_t ulNotificationValue;
   modbus_t telegram;
+  int8_t i8state;
 
   for(;;)
   {
@@ -484,6 +532,7 @@ void StartTaskModbusMaster(void *argument)
 	  /* Block indefinitely until a Modbus Frame arrives or query timeouts*/
 	  ulNotificationValue = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 	  modH->i8lastError = 0;
+
       if(ulNotificationValue == NO_REPLY)
       {
     	  modH->i8state = COM_IDLE;
@@ -493,9 +542,30 @@ void StartTaskModbusMaster(void *argument)
     	  continue;
       }
 
-	  modH->u8BufferSize = uxQueueMessagesWaiting(modH->QueueModbusHandle);
+	  //modH->u8BufferSize = uxQueueMessagesWaiting(modH->QueueModbusHandle);
 
-	  int8_t i8state = getRxBuffer(modH);
+#if ENABLE_USB_CDC ==1
+      if (modH->u8TypeHW == USB_CDC_HW)
+      {
+    	  i8state = modH->u8BufferSize;
+    	  if(i8state == ERR_BUFF_OVERFLOW)
+    	  {
+    		  modH->i8state = COM_IDLE;
+    		  modH->i8lastError = NO_REPLY;
+    		  modH->u16errCnt++;
+    		  xTaskNotify((TaskHandle_t)telegram.u32CurrentTask, modH->i8lastError, eSetValueWithOverwrite);
+    		  continue;
+    	  }
+      }
+      else
+      {
+    	  i8state = getRxBuffer(modH);
+      }
+
+#else
+      i8state = getRxBuffer(modH);
+#endif
+
 	  //modH->u8lastError = i8state;
 
 	  if (i8state < 6){
@@ -827,6 +897,10 @@ void buildException( uint8_t u8exception, modbusHandler_t *modH )
 }
 
 
+#if ENABLE_USB_CDC == 1
+extern uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len);
+#endif
+
 /**
  * @brief
  * This method transmits au8Buffer to Serial line.
@@ -846,47 +920,61 @@ void sendTxBuffer(modbusHandler_t *modH)
     modH->u8BufferSize++;
     modH->au8Buffer[ modH->u8BufferSize ] = u16crc & 0x00ff;
     modH->u8BufferSize++;
-
-    if (modH->EN_Port != NULL)
+#if ENABLE_USB_CDC ==1
+    if(modH->u8TypeHW == USART_HW)
     {
-        // set RS485 transceiver to transmit mode
-    	HAL_GPIO_WritePin(modH->EN_Port, modH->EN_Pin, GPIO_PIN_SET);
+#endif
+    	if (modH->EN_Port != NULL)
+        {
+            // set RS485 transceiver to transmit mode
+        	HAL_GPIO_WritePin(modH->EN_Port, modH->EN_Pin, GPIO_PIN_SET);
+        }
+
+        // transfer buffer to serial line
+        HAL_UART_Transmit_IT(modH->port, modH->au8Buffer,  modH->u8BufferSize);
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY); //wait notification from TXE interrupt
+
+
+         if (modH->EN_Port != NULL)
+         {
+             // must wait transmission end before changing pin state
+             //return RS485 transceiver to receive mode
+
+        	 #if defined(STM32H745xx) || defined(STM32H743xx)  || defined(STM32F303xE)
+        	 while((modH->port->Instance->ISR & USART_ISR_TC) ==0 )
+             #else
+        	 while((modH->port->Instance->SR & USART_SR_TC) ==0 )
+	    	 #endif
+        	 {
+        		taskYIELD();
+        	 }
+        	 HAL_GPIO_WritePin(modH->EN_Port, modH->EN_Pin, GPIO_PIN_RESET);
+         }
+
+
+         // set timeout for master query
+         if(modH->uiModbusType == MASTER_RTU )
+         {
+ 	    	xTimerReset(modH->xTimerTimeout,0);
+         }
+#if ENABLE_USB_CDC == 1
     }
 
-    // transfer buffer to serial line
-    //port->write( au8Buffer, u8BufferSize );
-    //HAL_UART_Transmit(modH->port, modH->au8Buffer , modH->u8BufferSize, 100);
-    HAL_UART_Transmit_IT(modH->port, modH->au8Buffer,  modH->u8BufferSize);
+    else if(modH->u8TypeHW == USB_CDC_HW)
+	{
+    	CDC_Transmit_FS(modH->au8Buffer,  modH->u8BufferSize);
+    	// set timeout for master query
+    	if(modH->uiModbusType == MASTER_RTU )
+    	{
+    	   	xTimerReset(modH->xTimerTimeout,0);
+    	}
 
-    ulTaskNotifyTake(pdTRUE, portMAX_DELAY); //wait notification from TXE interrupt
+	}
+#endif
 
-
-     if (modH->EN_Port != NULL)
-     {
-         // must wait transmission end before changing pin state
-         //return RS485 transceiver to receive mode
-
-    	 #if defined(STM32H745xx) || defined(STM32H743xx)  || defined(STM32F303xE)
-    	 while((modH->port->Instance->ISR & USART_ISR_TC) ==0 )
-         #else
-    	 while((modH->port->Instance->SR & USART_SR_TC) ==0 )
-		 #endif
-    	 {
-    		taskYIELD();
-    	 }
-    	 HAL_GPIO_WritePin(modH->EN_Port, modH->EN_Pin, GPIO_PIN_RESET);
-     }
 
      xQueueGenericReset(modH->QueueModbusHandle, pdFALSE);
-
      modH->u8BufferSize = 0;
-
-     // set timeout for master query
-     if(modH->uiModbusType == MASTER_RTU )
-     {
- 		xTimerReset(modH->xTimerTimeout,0);
-     }
-
      // increase message counter
      modH->u16OutCnt++;
 

@@ -18,6 +18,8 @@
 #include "timers.h"
 
 
+#define ENABLE_USB_CDC 0  //Enable the USB CDC support and examples
+
 #define T35  5
 #define MAX_BUFFER  64	//!< maximum size for the communication buffer in bytes
 #define TIMEOUT_MODBUS 1000
@@ -42,6 +44,17 @@ typedef struct
     uint32_t *u32CurrentTask; /*!< Pointer to the task that will receive notifications from Modbus */
 }
 modbus_t;
+
+
+enum
+{
+    USART_HW = 1,
+#if ENABLE_USB_CDC == 1
+    USB_CDC_HW = 2,
+#endif
+
+};
+
 
 /**
  * @struct modbusHandler_t
@@ -83,6 +96,10 @@ typedef struct
 	xTimerHandle xTimerTimeout;
 	//Semaphore for Modbus data
 	osSemaphoreId_t ModBusSphrHandle;
+#if ENABLE_USB_CDC == 1
+	uint8_t u8TypeHW;
+	//int16_t i16LenRx;
+#endif
 
 }
 modbusHandler_t;
@@ -190,6 +207,11 @@ modbusHandler_t *mHandlers[MAX_M_HANDLERS];
 // Function prototypes
 void ModbusInit(modbusHandler_t * modH);
 void ModbusStart(modbusHandler_t * modH);
+
+#if ENABLE_USB_CDC == 1
+void ModbusStartCDC(modbusHandler_t * modH);
+#endif
+
 void setTimeOut( uint16_t u16timeOut); //!<write communication watch-dog timer
 uint16_t getTimeOut(); //!<get communication watch-dog timer value
 bool getTimeOutState(); //!<get communication watch-dog timer state
