@@ -26,14 +26,7 @@
 
 
 
-///Queue Modbus RX
-//osMessageQueueId_t QueueModbusHandle;
-const osMessageQueueAttr_t QueueModbus_attributes = {
-       .name = "QueueModbusData"
-};
-
-///Queue Modbus telegrams
-//osMessageQueueId_t QueueModbusHandle;
+///Queue Modbus telegrams for master
 const osMessageQueueAttr_t QueueTelegram_attributes = {
        .name = "QueueModbusTelegram"
 };
@@ -82,6 +75,61 @@ static void vTimerCallbackTimeout(TimerHandle_t *pxTimer);
 static int8_t getRxBuffer(modbusHandler_t *modH);
 static int8_t SendQuery(modbusHandler_t * modH ,  modbus_t telegram);
 
+
+
+
+void RingAdd(modbusRingBuffer_t *xRingBuffer, uint8_t u8Val)
+{
+
+	xRingBuffer->uxBuffer[xRingBuffer->u8end] = u8Val;
+	xRingBuffer->u8end = (xRingBuffer->u8end + 1) % MAX_BUFFER;
+	if (xRingBuffer->u8available == MAX_BUFFER)
+	{
+		xRingBuffer->u8start = (xRingBuffer->u8start + 1) % MAX_BUFFER;
+	}
+	else
+	{
+		xRingBuffer->u8available++;
+	}
+
+}
+
+uint8_t RingGetAllBytes(modbusRingBuffer_t *xRingBuffer, uint8_t *buffer)
+{
+	return RingGetNBytes(xRingBuffer, buffer, xRingBuffer->u8available);
+}
+
+uint8_t RingGetNBytes(modbusRingBuffer_t *xRingBuffer, uint8_t *buffer, uint8_t uNumber)
+{
+	uint8_t uCounter;
+	if(xRingBuffer->u8available == 0  || uNumber == 0 ) return 0;
+	if(uNumber > MAX_BUFFER) return 0;
+
+	for(uCounter = 0; uCounter < uNumber && uCounter< xRingBuffer->u8available ; uCounter++)
+	{
+		buffer[uCounter] = xRingBuffer->uxBuffer[xRingBuffer->u8start];
+		xRingBuffer->u8start = (xRingBuffer->u8start + 1) % MAX_BUFFER;
+	}
+	xRingBuffer->u8available = xRingBuffer->u8available - uCounter;
+
+	return uCounter;
+}
+
+uint8_t RingCountBytes(modbusRingBuffer_t *xRingBuffer)
+{
+return xRingBuffer->u8available;
+}
+
+void RingClear(modbusRingBuffer_t *xRingBuffer)
+{
+xRingBuffer->u8start = 0;
+xRingBuffer->u8end = 0;
+xRingBuffer->u8available = 0;
+}
+
+
+
+
 const unsigned char fctsupported[] =
 {
     MB_FC_READ_COILS,
@@ -124,8 +172,10 @@ void ModbusInit(modbusHandler_t * modH)
 
   if (numberHandlers < MAX_M_HANDLERS)
   {
-	  //Create QueueModbus
-	  modH->QueueModbusHandle = osMessageQueueNew (MAX_BUFFER, sizeof(uint8_t), &QueueModbus_attributes);
+
+	  //Initialize the ring buffer
+
+	  RingClear(modH->xBufferRX);
 
 	  if(modH->uiModbusType == SLAVE_RTU)
 	  {
@@ -292,7 +342,7 @@ void StartTaskModbusSlave(void *argument)
 
 #else
 
-	  modH->u8BufferSize = uxQueueMessagesWaiting(modH->QueueModbusHandle);
+	  modH->u8BufferSize = RingCountBytes(modH->xBufferRX);
 	  if (modH->EN_Port != NULL )
 	  {
 	   	HAL_GPIO_WritePin(modH->EN_Port, modH->EN_Pin, GPIO_PIN_RESET); // is this required?
@@ -306,7 +356,7 @@ void StartTaskModbusSlave(void *argument)
 		  //The size of the frame is invalid
 		  modH->i8lastError = ERR_BAD_SIZE;
 		  modH->u16errCnt++;
-		  xQueueGenericReset(modH->QueueModbusHandle, pdFALSE);
+		  //RingClear(modH->xBufferRX); //this is not necessary the ring buffer is cleaned by the read operation
 		  continue;
 	  }
 
@@ -542,8 +592,6 @@ void StartTaskModbusMaster(void *argument)
     	  continue;
       }
 
-	  //modH->u8BufferSize = uxQueueMessagesWaiting(modH->QueueModbusHandle);
-
 #if ENABLE_USB_CDC ==1
       if (modH->u8TypeHW == USB_CDC_HW)
       {
@@ -569,8 +617,7 @@ void StartTaskModbusMaster(void *argument)
 	  //modH->u8lastError = i8state;
 
 	  if (i8state < 6){
-		  //The size of the frame is invalid
-		  xQueueGenericReset(modH->QueueModbusHandle, pdFALSE);
+
 		  modH->i8state = COM_IDLE;
 		  modH->i8lastError = ERR_BAD_SIZE;
 		  modH->u16errCnt++;
@@ -730,20 +777,14 @@ uint8_t validateAnswer(modbusHandler_t *modH)
 int8_t getRxBuffer(modbusHandler_t *modH)
 {
     bool bBuffOverflow = false;
-    int i;
+
     if (modH->EN_Port)
     {
-    	//digitalWrite( u8txenpin, LOW );
     	HAL_GPIO_WritePin(modH->EN_Port, modH->EN_Pin, GPIO_PIN_RESET);
     }
 
-
-    modH->u8BufferSize = uxQueueMessagesWaiting(modH->QueueModbusHandle);
-
-    for(i = 0; i<  modH->u8BufferSize; i++ )
-   	{
-   		  xQueueReceive(modH->QueueModbusHandle, &modH->au8Buffer[i], 0);
-   	}
+    modH->u8BufferSize = RingCountBytes(modH->xBufferRX);
+    RingGetAllBytes(modH->xBufferRX, modH->au8Buffer);
 
     modH->u16InCnt++;
 
@@ -973,7 +1014,6 @@ void sendTxBuffer(modbusHandler_t *modH)
 #endif
 
 
-     xQueueGenericReset(modH->QueueModbusHandle, pdFALSE);
      modH->u8BufferSize = 0;
      // increase message counter
      modH->u16OutCnt++;

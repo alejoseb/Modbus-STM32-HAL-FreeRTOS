@@ -81,8 +81,8 @@ Linux: https://sourceforge.net/projects/pymodslave/
 Windows: https://sourceforge.net/projects/modrssim2/
 
 ## TODOs:
-- Improve the queue for data reception, the current method is too heavy it shoudl be replaced with a simple buffer, a stream or another FreeRTOS primitive.
 - Implement wrapper functions for Master function codes. Currently, telegrams are defined manually. 
 - Improve function documentation
+- ~~Improve the queue for data reception, the current method is too heavy it shoudl be replaced with a simple buffer, a stream or another FreeRTOS primitive.~~ Queue replaced by a Ring Buffer (03/19/2021)
 - ~~Test with Rs485 transceivers (implemented but not tested)~~ Verified with MAX485 transceivers (01/03/2021)
 - MODBUS TCP implementation

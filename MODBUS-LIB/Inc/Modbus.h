@@ -56,6 +56,16 @@ enum
 };
 
 
+typedef struct
+{
+uint8_t uxBuffer[MAX_BUFFER];
+uint8_t u8start;
+uint8_t u8end;
+uint8_t u8available;
+}modbusRingBuffer_t;
+
+
+
 /**
  * @struct modbusHandler_t
  * @brief
@@ -83,8 +93,7 @@ typedef struct
 	//uint8_t u8exception;
 
 	//FreeRTOS components
-	//Queue Modbus RX
-	osMessageQueueId_t QueueModbusHandle;
+
 	//Queue Modbus Telegram
 	osMessageQueueId_t QueueTelegramHandle;
 
@@ -96,6 +105,8 @@ typedef struct
 	xTimerHandle xTimerTimeout;
 	//Semaphore for Modbus data
 	osSemaphoreId_t ModBusSphrHandle;
+	// RX ring buffer for USART
+	modbusRingBuffer_t xBufferRX[MAX_BUFFER];
 #if ENABLE_USB_CDC == 1
 	uint8_t u8TypeHW;
 	//int16_t i16LenRx;
@@ -229,6 +240,15 @@ void ModbusEnd(); //!<finish any communication and release serial communication 
 void StartTaskModbusSlave(void *argument); //slave
 void StartTaskModbusMaster(void *argument); //master
 uint16_t calcCRC(uint8_t *Buffer, uint8_t u8length);
+
+
+//Function prototypes for ModbusRingBuffer
+void RingAdd(modbusRingBuffer_t *xRingBuffer, uint8_t u8Val); // adds a byte to the ring buffer
+uint8_t RingGetAllBytes(modbusRingBuffer_t *xRingBuffer, uint8_t *buffer); // gets all the available bytes into buffer and return the number of bytes read
+uint8_t RingGetNBytes(modbusRingBuffer_t *xRingBuffer, uint8_t *buffer, uint8_t uNumber); // gets uNumber of bytes from ring buffer, returns the actual number of bytes read
+uint8_t RingCountBytes(modbusRingBuffer_t *xRingBuffer); // return the number of available bytes
+void RingClear(modbusRingBuffer_t *xRingBuffer); // flushes the ring buffer
+
 extern uint8_t numberHandlers;
 
 

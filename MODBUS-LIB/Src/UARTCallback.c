@@ -67,7 +67,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *UartHandle)
     {
     	if (mHandlers[i]->port == UartHandle  )
     	{
-    		xQueueSendToBackFromISR( mHandlers[i]->QueueModbusHandle, &mHandlers[i]->dataRX, pdFALSE);
+    		RingAdd(mHandlers[i]->xBufferRX, mHandlers[i]->dataRX);
     		HAL_UART_Receive_IT(mHandlers[i]->port, &mHandlers[i]->dataRX, 1);
     		xTimerResetFromISR(mHandlers[i]->xTimerT35, &xHigherPriorityTaskWoken);
     		break;
