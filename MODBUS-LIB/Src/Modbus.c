@@ -175,7 +175,7 @@ void ModbusInit(modbusHandler_t * modH)
 
 	  //Initialize the ring buffer
 
-	  RingClear(modH->xBufferRX);
+	  RingClear(&modH->xBufferRX);
 
 	  if(modH->uiModbusType == SLAVE_RTU)
 	  {
@@ -342,7 +342,7 @@ void StartTaskModbusSlave(void *argument)
 
 #else
 
-	  modH->u8BufferSize = RingCountBytes(modH->xBufferRX);
+	  modH->u8BufferSize = RingCountBytes(&modH->xBufferRX);
 	  if (modH->EN_Port != NULL )
 	  {
 	   	HAL_GPIO_WritePin(modH->EN_Port, modH->EN_Pin, GPIO_PIN_RESET); // is this required?
@@ -783,8 +783,8 @@ int8_t getRxBuffer(modbusHandler_t *modH)
     	HAL_GPIO_WritePin(modH->EN_Port, modH->EN_Pin, GPIO_PIN_RESET);
     }
 
-    modH->u8BufferSize = RingCountBytes(modH->xBufferRX);
-    RingGetAllBytes(modH->xBufferRX, modH->au8Buffer);
+    modH->u8BufferSize = RingCountBytes(&modH->xBufferRX);
+    RingGetAllBytes(&modH->xBufferRX, modH->au8Buffer);
 
     modH->u16InCnt++;
 

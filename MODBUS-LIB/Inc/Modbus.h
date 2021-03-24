@@ -106,7 +106,7 @@ typedef struct
 	//Semaphore for Modbus data
 	osSemaphoreId_t ModBusSphrHandle;
 	// RX ring buffer for USART
-	modbusRingBuffer_t xBufferRX[MAX_BUFFER];
+	modbusRingBuffer_t xBufferRX;
 #if ENABLE_USB_CDC == 1
 	uint8_t u8TypeHW;
 	//int16_t i16LenRx;
