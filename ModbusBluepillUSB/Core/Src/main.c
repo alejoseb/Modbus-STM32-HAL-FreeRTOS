@@ -49,7 +49,7 @@
 modbusHandler_t ModbusH;
 modbusHandler_t ModbusUSB;
 uint16_t ModbusDATA[8];
-uint16_t ModbusDATAusb[8];
+uint16_t ModbusDATAusb[16];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/

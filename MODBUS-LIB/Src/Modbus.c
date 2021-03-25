@@ -192,14 +192,34 @@ void ModbusInit(modbusHandler_t * modH)
 						( void * )modH->xTimerTimeout,     // Assign each timer a unique id equal to its array index.
 						(TimerCallbackFunction_t) vTimerCallbackTimeout  // Each timer calls the same callback when it expires.
                   	  	);
+
+		  if(modH->xTimerTimeout == NULL)
+		  {
+			  while(1); //error creating timer, check heap and stack size
+		  }
+
+
 		  modH->QueueTelegramHandle = osMessageQueueNew (MAX_TELEGRAMS, sizeof(modbus_t), &QueueTelegram_attributes);
+
+		  if(modH->QueueTelegramHandle == NULL)
+		  {
+			  while(1); //error creating queue for telegrams, check heap and stack size
+		  }
+
 	  }
 	  else
 	  {
 		  while(1); //Error Modbus type not supported choose a valid Type
 	  }
-	  //Create Semaphore DataRX
-	  //Create timer T35
+
+	  if  (modH->myTaskModbusAHandle == NULL)
+	  {
+		  while(1); //Error creating modbus task, check heap and stack size
+	  }
+
+
+
+
 
 	  modH->xTimerT35 = xTimerCreate("TimerT35",         // Just a text name, not used by the kernel.
 		  	  	  	  	  	  	  	5 ,     // The timer period in ticks.
@@ -207,8 +227,19 @@ void ModbusInit(modbusHandler_t * modH)
 									( void * )modH->xTimerT35,     // Assign each timer a unique id equal to its array index.
                                     (TimerCallbackFunction_t) vTimerCallbackT35     // Each timer calls the same callback when it expires.
                                     );
+	  if (modH->xTimerT35 == NULL)
+	  {
+		  while(1); //Error creating the timer, check heap and stack size
+	  }
+
 
 	  modH->ModBusSphrHandle = osSemaphoreNew(1, 1, &ModBusSphr_attributes);
+
+	  if(modH->ModBusSphrHandle == NULL)
+	  {
+		  while(1); //Error creating the semaphore, check heap and stack size
+	  }
+
 	  mHandlers[numberHandlers] = modH;
 	  numberHandlers++;
   }
@@ -332,13 +363,28 @@ void StartTaskModbusSlave(void *argument)
 	  modH->i8lastError = 0;
 
 #if ENABLE_USB_CDC ==1
-	  i8state = modH->u8BufferSize;
-	  if (i8state == ERR_BUFF_OVERFLOW)
+	  if(modH-> u8TypeHW == USART_HW)
 	  {
-		  modH->i8lastError = ERR_BUFF_OVERFLOW;
-		  modH->u16errCnt++;
-		  continue;
+
+		  modH->u8BufferSize = RingCountBytes(&modH->xBufferRX);
+		  if (modH->EN_Port != NULL )
+		  {
+		   	HAL_GPIO_WritePin(modH->EN_Port, modH->EN_Pin, GPIO_PIN_RESET); // is this required?
+		  }
+		  i8state = getRxBuffer(modH);
+
 	  }
+	  else
+	  {
+		  i8state = modH->u8BufferSize; // buffer size is already updated in the interrupt service routine of USB
+		  if (i8state == ERR_BUFF_OVERFLOW)
+		  {
+		     modH->i8lastError = ERR_BUFF_OVERFLOW;
+		  	 modH->u16errCnt++;
+		  	 continue;
+		  }
+	  }
+
 
 #else
 

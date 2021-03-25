@@ -42,7 +42,7 @@ extern "C" {
 extern modbusHandler_t ModbusH;
 extern modbusHandler_t ModbusUSB;
 extern uint16_t ModbusDATA[8];
-extern uint16_t ModbusDATAusb[8];
+extern uint16_t ModbusDATAusb[16];
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
@@ -66,7 +66,7 @@ void Error_Handler(void);
 #define LED_Pin GPIO_PIN_13
 #define LED_GPIO_Port GPIOC
 /* USER CODE BEGIN Private defines */
-#define SLAVE_EX 0 // 1 for slave example 0 for master example
+#define SLAVE_EX 1 // 1 for slave example 0 for master example
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

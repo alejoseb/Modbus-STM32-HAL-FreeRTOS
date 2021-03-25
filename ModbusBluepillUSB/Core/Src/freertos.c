@@ -174,12 +174,13 @@ void StartTaskSlave(void *argument)
   {
 
 #if SLAVE_EX == 1
-	  xSemaphoreTake(ModbusH.ModBusSphrHandle , 100);
-	  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, ModbusH.au16regs[0] & 0x1);
-	  xSemaphoreGive(ModbusH.ModBusSphrHandle);
+	  /**** Slave example CDC ***/
+	  xSemaphoreTake(ModbusUSB.ModBusSphrHandle , 100);
+	  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, ModbusUSB.au16regs[0] & 0x1);
+	  xSemaphoreGive(ModbusUSB.ModBusSphrHandle);
 
 #else
-	  /**** Master example ***/
+	  /**** Master example CDC ***/
 	  if( hUsbDeviceFS.dev_state == USBD_STATE_CONFIGURED)
 	  {
 	     ModbusQuery(&ModbusUSB, telegram[1]); // make a query
