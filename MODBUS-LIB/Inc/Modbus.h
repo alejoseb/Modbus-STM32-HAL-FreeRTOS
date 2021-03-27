@@ -74,6 +74,25 @@ uint8_t u8available;
  */
 typedef struct
 {
+       /*
+	* uint8_t uiModbusType;
+	* UART_HandleTypeDef *port;	 //始能串口
+	* uint8_t u8id;             	 //0為Master  1~247為Slave
+	* GPIO_TypeDef* EN_Port;   	 //0為USB與RS232模式 1為485模式(待測試) [RE<--->DE]
+	* uint16_t EN_Pin;  	    	 //輸出針腳
+	* int8_t i8lastError;	
+	* uint8_t au8Buffer[MAX_BUFFER]; //用於通訊的Modbus緩衝區 
+	* uint8_t u8BufferSize;
+	* uint8_t u8lastRec;
+	* uint16_t *au16regs;
+	* uint16_t u16InCnt, u16OutCnt, u16errCnt; //保留Modbus流量的統計信息 
+	* uint16_t u16timeOut;
+	* uint32_t u32time, u32timeOut, u32overTime;
+	* uint16_t u16regsize;
+	* uint8_t dataRX;
+	* int8_t i8state;
+	*/
+	
 	uint8_t uiModbusType;
 	UART_HandleTypeDef *port; //HAL Serial Port handler
 	uint8_t u8id; //!< 0=master, 1..247=slave number
@@ -164,7 +183,7 @@ enum MESSAGE
  */
 enum MB_FC
 {
-    MB_FC_NONE                     = 0,   /*!< null operator */
+    MB_FC_NONE                     = 0, /*!< null operator */
     MB_FC_READ_COILS               = 1,	/*!< FCT=1 -> read coils or digital outputs */
     MB_FC_READ_DISCRETE_INPUT      = 2,	/*!< FCT=2 -> read digital inputs */
     MB_FC_READ_REGISTERS           = 3,	/*!< FCT=3 -> read registers or analog outputs */
@@ -189,10 +208,10 @@ enum ERR_LIST
     ERR_BUFF_OVERFLOW             = -3,
     ERR_BAD_CRC                   = -4,
     ERR_EXCEPTION                 = -5,
-	ERR_BAD_SIZE                  = -6,
-	ERR_BAD_ADDRESS               = -7,
-	ERR_TIME_OUT				  = -8,
-	ERR_BAD_SLAVE_ID			  = -9
+    ERR_BAD_SIZE                  = -6,
+    ERR_BAD_ADDRESS               = -7,
+    ERR_TIME_OUT		  = -8,
+    ERR_BAD_SLAVE_ID		  = -9
 
 };
 
@@ -206,7 +225,7 @@ enum
 };
 
 typedef union {
-	uint8_t   u8[4];
+	uint8_t  u8[4];
 	uint16_t u16[2];
 	uint32_t u32;
 
