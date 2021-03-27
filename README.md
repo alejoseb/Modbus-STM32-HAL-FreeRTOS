@@ -87,4 +87,8 @@ Windows: https://sourceforge.net/projects/modrssim2/
 - ~~Improve the queue for data reception; the current method is too heavy it should be replaced with a simple buffer, a stream, or another FreeRTOS primitive.~~ Solved Queue repalced by a Ring Buffer (03/19/2021)
 - ~~Test with Rs485 transceivers (implemented but not tested)~~ Verified with MAX485 transceivers (01/03/2021)
 - MODBUS TCP implementation
+* * *
+# Modbus函式庫
+* 適用於STM32(Cortex-M3/M4/M7)
+
 
