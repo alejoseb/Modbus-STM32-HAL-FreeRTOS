@@ -160,7 +160,7 @@ Windows: https://sourceforge.net/projects/modrssim2/
 # 目標
 * 為主功能代碼實現包裝器功能。 當前，telegrams是手動定義的。 
 * 改進功能文檔 
-* ~~改善數據接收隊列； 當前方法過於繁重，應將其替換為簡單的緩衝區，流或其他FreeRTOS原語。 已解決的隊列由環形緩衝區重新填充 [Ring Wiki](https://zh.wikipedia.org/wiki/%E7%92%B0%E5%BD%A2%E7%B7%A9%E8%A1%9D%E5%8D%80)（03/19/2021） ~~
-* ~~使用Rs485收發器進行測試（已實現，但未經測試）已通過MAX485收發器進行了驗證（01/03/2021） ~~
+* ~~改善數據接收隊列； 當前方法過於繁重，應將其替換為簡單的緩衝區，流或其他FreeRTOS原語。 已解決的隊列由環形緩衝區重新填充 [Ring Wiki](https://zh.wikipedia.org/wiki/%E7%92%B0%E5%BD%A2%E7%B7%A9%E8%A1%9D%E5%8D%80)（03/19/2021)~~
+* ~~使用Rs485收發器進行測試（已實現，但未經測試）已通過MAX485收發器進行了驗證（01/03/2021)~~
 * Modbus TCP功能實現
 * * * 
