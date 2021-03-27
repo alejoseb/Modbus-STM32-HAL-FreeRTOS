@@ -88,7 +88,9 @@ Windows: https://sourceforge.net/projects/modrssim2/
 - ~~Test with Rs485 transceivers (implemented but not tested)~~ Verified with MAX485 transceivers (01/03/2021)
 - MODBUS TCP implementation
 * * *
-# Modbus函式庫
+# Modbus函式庫For STM32微處理器
 * 適用於STM32(Cortex-M3/M4/M7)
+* 該函式庫可以實作 Modbus Rtu [Master模式] 與 [Slave模式] 支援USART 與 USB-CDC
+* 使用Stm32cube HAL庫 與 Freertos時實系統
 
 
