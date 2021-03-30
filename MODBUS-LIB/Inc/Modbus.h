@@ -21,7 +21,7 @@
 #define ENABLE_USB_CDC 0  //Enable the USB CDC support and examples
 
 #define T35  5
-#define MAX_BUFFER  128	//!< maximum size for the communication buffer in bytes. 一次讀取上限，最大125 Byte
+#define MAX_BUFFER  128	//!< maximum size for the communication buffer in bytes. 一次讀取上限，最大128 Byte
 #define TIMEOUT_MODBUS 1000
 #define MAX_M_HANDLERS 2
 #define MAX_TELEGRAMS 2 //Max number of Telegrams for master
