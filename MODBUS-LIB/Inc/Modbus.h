@@ -109,7 +109,6 @@ typedef struct
 	uint16_t u16regsize;
 	uint8_t dataRX;
 	int8_t i8state;
-	//uint8_t u8exception;
 
 	//FreeRTOS components
 
