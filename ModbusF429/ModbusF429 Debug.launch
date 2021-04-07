@@ -35,6 +35,7 @@
 <booleanAttribute key="com.st.stm32cube.ide.mcu.debug.stlink.stlink_check_serial_number" value="false"/>
 <stringAttribute key="com.st.stm32cube.ide.mcu.debug.stlink.stlink_txt_serial_number" value=""/>
 <stringAttribute key="com.st.stm32cube.ide.mcu.debug.stlink.watchdog_config" value="none"/>
+<stringAttribute key="com.st.stm32cube.ide.mcu.debug.stlinkrestart_configurations" value="{&quot;fItems&quot;:[{&quot;fDisplayName&quot;:&quot;Reset&quot;,&quot;fIsSuppressible&quot;:false,&quot;fResetAttribute&quot;:&quot;Reset&quot;,&quot;fResetStrategies&quot;:[{&quot;fDisplayName&quot;:&quot;Reset&quot;,&quot;fLaunchAttribute&quot;:&quot;monitor reset&quot;,&quot;fGdbCommands&quot;:[&quot;monitor reset&quot;],&quot;fCmdOptions&quot;:[]},{&quot;fDisplayName&quot;:&quot;None&quot;,&quot;fLaunchAttribute&quot;:&quot;no_reset&quot;,&quot;fGdbCommands&quot;:[],&quot;fCmdOptions&quot;:[]}],&quot;fGdbCommandGroup&quot;:{&quot;name&quot;:&quot;Additional commands&quot;,&quot;commands&quot;:[]}}]}"/>
 <booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.doHalt" value="false"/>
 <booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.doReset" value="false"/>
 <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.initCommands" value=""/>

@@ -43,7 +43,7 @@
 
 /* USER CODE BEGIN PV */
 modbusHandler_t ModbusH;
-uint16_t ModbusDATA[8];
+uint16_t ModbusDATA[16];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -86,21 +86,23 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_ETH_Init();
+  //MX_ETH_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
 
   /* Modbus Slave initialization */
-  ModbusH.uiModbusType = SLAVE_RTU;
+  //ModbusH.uiModbusType = SLAVE_RTU;
+  ModbusH.uiModbusType = MASTER_RTU;
   ModbusH.port =  &huart3; // This is the UART port connected to STLINK in the NUCLEO F429
-  ModbusH.u8id = 1; //slave ID
+  //ModbusH.u8id = 1; //slave ID
+  ModbusH.u8id = 0; //slave ID for master always 0
   ModbusH.u16timeOut = 1000;
   ModbusH.EN_Port = NULL; // No RS485
    //ModbusH2.EN_Port = LD2_GPIO_Port; // RS485 Enable
    //ModbusH2.EN_Pin = LD2_Pin; // RS485 Enable
   ModbusH.u32overTime = 0;
   ModbusH.au16regs = ModbusDATA;
-  ModbusH.u8regsize= sizeof(ModbusDATA)/sizeof(ModbusDATA[0]);
+  ModbusH.u16regsize= sizeof(ModbusDATA)/sizeof(ModbusDATA[0]);
    //Initialize Modbus library
   ModbusInit(&ModbusH);
   //Start capturing traffic on serial Port

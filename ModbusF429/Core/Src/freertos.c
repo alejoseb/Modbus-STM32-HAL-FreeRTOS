@@ -112,6 +112,32 @@ void StartModbusTestTask(void *argument)
 {
   /* USER CODE BEGIN StartModbusTestTask */
   /* Infinite loop */
+/* master example */
+	modbus_t telegram;
+	uint32_t u32NotificationValue;
+
+	telegram.u8id = 1; // slave address
+	telegram.u8fct = 3; // function code (this one is registers read)
+	//telegram.u16RegAdd = 0x160; // start address in slave
+	telegram.u16RegAdd = 0x0; // start address in slave
+	telegram.u16CoilsNo = 10; // number of elements (coils or registers) to read
+	telegram.au16reg = ModbusDATA; // pointer to a memory array in the Arduino
+
+	for(;;)
+	{
+	    ModbusQuery(&ModbusH, telegram); // make a query
+	    u32NotificationValue = ulTaskNotifyTake(pdTRUE, portMAX_DELAY); // block until query finishes
+	    if(u32NotificationValue)
+	    {
+	     //handle error
+	       while(1);
+	    }
+	    osDelay(500);
+	}
+
+
+	/*  slave example */
+	/*
   for(;;)
   {
 	  xSemaphoreTake(ModbusH.ModBusSphrHandle , portMAX_DELAY);
@@ -119,6 +145,7 @@ void StartModbusTestTask(void *argument)
 	  xSemaphoreGive(ModbusH.ModBusSphrHandle);
 	  osDelay(200);
   }
+  */
   /* USER CODE END StartModbusTestTask */
 }
 
