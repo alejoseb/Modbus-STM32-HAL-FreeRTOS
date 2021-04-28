@@ -15,6 +15,11 @@
 #include "timers.h"
 #include "semphr.h"
 
+#if ENABLE_TCP == 1
+#include "api.h"
+#endif
+
+
 #define bitRead(value, bit) (((value) >> (bit)) & 0x01)
 #define bitSet(value, bit) ((value) |= (1UL << (bit)))
 #define bitClear(value, bit) ((value) &= ~(1UL << (bit)))
@@ -31,13 +36,22 @@ const osMessageQueueAttr_t QueueTelegram_attributes = {
        .name = "QueueModbusTelegram"
 };
 
-//Task Modbus Slave
-//osThreadId_t myTaskModbusAHandle;
+
+
+
 const osThreadAttr_t myTaskModbusA_attributes = {
     .name = "TaskModbusSlave",
     .priority = (osPriority_t) osPriorityNormal,
     .stack_size = 128 * 4
 };
+
+const osThreadAttr_t myTaskModbusA_attributesTCP = {
+    .name = "TaskModbusSlave",
+    .priority = (osPriority_t) osPriorityNormal,
+    .stack_size = 256 * 4
+};
+
+
 
 //Task Modbus Master
 //osThreadId_t myTaskModbusAHandle;
@@ -46,6 +60,16 @@ const osThreadAttr_t myTaskModbusB_attributes = {
     .priority = (osPriority_t) osPriorityNormal,
     .stack_size = 128 * 4
 };
+
+
+const osThreadAttr_t myTaskModbusB_attributesTCP = {
+    .name = "TaskModbusMaster",
+    .priority = (osPriority_t) osPriorityNormal,
+    .stack_size = 256 * 4
+};
+
+
+
 
 //Semaphore to access the Modbus Data
 const osSemaphoreAttr_t ModBusSphr_attributes = {
@@ -180,7 +204,19 @@ void ModbusInit(modbusHandler_t * modH)
 	  if(modH->uiModbusType == SLAVE_RTU)
 	  {
 		  //Create Modbus task slave
-	  	  modH->myTaskModbusAHandle = osThreadNew(StartTaskModbusSlave, modH, &myTaskModbusA_attributes);
+#if ENABLE_TCP == 1
+		  if( modH->u8TypeHW == TCP_HW)
+		  {
+			  modH->myTaskModbusAHandle = osThreadNew(StartTaskModbusSlave, modH, &myTaskModbusA_attributesTCP);
+		  }
+		  else{
+			  modH->myTaskModbusAHandle = osThreadNew(StartTaskModbusSlave, modH, &myTaskModbusA_attributes);
+		  }
+#else
+		  modH->myTaskModbusAHandle = osThreadNew(StartTaskModbusSlave, modH, &myTaskModbusA_attributes);
+#endif
+
+
 	  }
 	  else if (modH->uiModbusType == MASTER_RTU)
 	  {
@@ -350,44 +386,175 @@ void vTimerCallbackTimeout(TimerHandle_t *pxTimer)
 }
 
 
+
+
+
 void StartTaskModbusSlave(void *argument)
 {
 
   modbusHandler_t *modH =  (modbusHandler_t *)argument;
   int8_t i8state;
 
-  for(;;)
+#if ENABLE_TCP ==1
+
+  // connection variables
+  struct netconn *conn;
+  err_t err, accept_err;
+
+  // server variables
+  struct netbuf *inbuf;
+  err_t recv_err;
+  char* buf;
+  uint16_t buflen;
+
+  //uint16_t uTransactionID;
+  //uint16_t uProtocolID;
+  uint16_t uLength;
+
+  bool xTCPvalid;
+
+  xTCPvalid = false;
+
+
+
+
+  /* Create a new TCP connection handle */
+  if(modH-> u8TypeHW == TCP_HW)
   {
-	  ulTaskNotifyTake(pdTRUE, portMAX_DELAY); /* Block indefinitely until a Modbus Frame arrives */
-
-	  modH->i8lastError = 0;
-
-#if ENABLE_USB_CDC ==1
-	  if(modH-> u8TypeHW == USART_HW)
+	  conn = netconn_new(NETCONN_TCP);
+	  if (conn!= NULL)
 	  {
+	     /* Bind to port (502) Modbus with default IP address */
+		 if(modH->uTcpPort == 0) modH->uTcpPort = 502; //if port not defined
+	     err = netconn_bind(conn, NULL, modH->uTcpPort);
+	     if (err == ERR_OK)
+	     {
+	    	 /* Put the connection into LISTEN state */
+	    	 netconn_listen(conn);
 
-		  modH->u8BufferSize = RingCountBytes(&modH->xBufferRX);
-		  if (modH->EN_Port != NULL )
-		  {
-		   	HAL_GPIO_WritePin(modH->EN_Port, modH->EN_Pin, GPIO_PIN_RESET); // is this required?
-		  }
-		  i8state = getRxBuffer(modH);
+	     }
+	     else{
+	    		  while(1)
+	    		  {
+	    			  // error binding the TCP Modbus port check your configuration
+	    		  }
+	    	  }
+
 
 	  }
-	  else
-	  {
-		  i8state = modH->u8BufferSize; // buffer size is already updated in the interrupt service routine of USB
-		  if (i8state == ERR_BUFF_OVERFLOW)
+	  else{
+		  while(1)
 		  {
-		     modH->i8lastError = ERR_BUFF_OVERFLOW;
-		  	 modH->u16errCnt++;
-		  	 continue;
+			  // error creating new connection check your configuration
 		  }
+	  }
+  }
+
+#endif
+
+  for(;;)
+  {
+
+	modH->i8lastError = 0;
+
+#if ENABLE_USB_CDC ==1 || ENABLE_TCP ==1
+
+
+#if ENABLE_USB_CDC ==1
+
+
+	  if(modH-> u8TypeHW == USB_CDC_HW)
+	  {
+		      ulTaskNotifyTake(pdTRUE, portMAX_DELAY); /* Block indefinitely until a Modbus Frame arrives */
+			  i8state = modH->u8BufferSize; // buffer size is already updated in the interrupt service routine of USB
+			  if (i8state == ERR_BUFF_OVERFLOW)
+			  {
+			     modH->i8lastError = ERR_BUFF_OVERFLOW;
+			  	 modH->u16errCnt++;
+			  	 continue;
+			  }
+	  }
+#endif
+
+
+#if ENABLE_TCP ==1
+	  if(modH-> u8TypeHW == TCP_HW)
+	  {
+
+		  while(1) //wait for incoming connection
+		 {
+		         /* accept any incoming connection */
+			  accept_err = netconn_accept(conn, &modH->newconn);
+			  if(accept_err == ERR_OK)
+			  {
+
+		           break; //break the loop and continue with validations of TCP frame
+
+			  }
+
+		 }
+
+		  recv_err = netconn_recv(modH->newconn, &inbuf);
+
+		  if (recv_err == ERR_OK)
+		  {
+		      if (netconn_err(modH->newconn) == ERR_OK)
+		      {
+		    	  /* Read the data from the port, blocking if nothing yet there.
+		    	  We assume the request (the part we care about) is in one netbuf */
+		    	   netbuf_data(inbuf, (void**)&buf, &buflen);
+		           if (buflen>11) // minimum frame size for modbus TCP
+		           {
+		        	  if(buf[2] == 0 || buf[3] == 0 ) //validate protocol ID
+		        	  {
+		        		  uLength = (buf[4]<<8 & 0xff00) | buf[5];
+		        		  if(uLength< (MAX_BUFFER-2)  && (uLength + 6) <= buflen)
+		        		  {
+		        			  for(int i = 0; i < uLength; i++)
+		        			  {
+		        				  modH->au8Buffer[i] = buf[i+6];
+		        			  }
+		        			  modH->u16TransactionID = (buf[0]<<8 & 0xff00) | buf[1];
+		        			  xTCPvalid = true;
+		        		  }
+		        	  }
+
+		           }
+		      }
+		  }
+
+
+
+		  if(xTCPvalid == false)
+		  {
+			  netconn_close(modH->newconn);
+			  netbuf_delete(inbuf);
+			  netconn_delete(modH->newconn);
+			  continue; // TCP package was not validated
+		  }
+
+
+		  modH->u8BufferSize = uLength + 2; //add 2 dummy bytes for CRC
+		  i8state = modH->u8BufferSize;
+	  }
+#endif
+
+
+	  if(modH-> u8TypeHW == USART_HW)
+	  {
+		      ulTaskNotifyTake(pdTRUE, portMAX_DELAY); /* Block indefinitely until a Modbus Frame arrives */
+	 		  modH->u8BufferSize = RingCountBytes(&modH->xBufferRX);
+	 		  if (modH->EN_Port != NULL )
+	 		  {
+	 		   	HAL_GPIO_WritePin(modH->EN_Port, modH->EN_Pin, GPIO_PIN_RESET); // is this required?
+	 		  }
+	 		  i8state = getRxBuffer(modH);
+
 	  }
 
 
 #else
-
+	  ulTaskNotifyTake(pdTRUE, portMAX_DELAY); /* Block indefinitely until a Modbus Frame arrives */
 	  modH->u8BufferSize = RingCountBytes(&modH->xBufferRX);
 	  if (modH->EN_Port != NULL )
 	  {
@@ -402,13 +569,36 @@ void StartTaskModbusSlave(void *argument)
 		  //The size of the frame is invalid
 		  modH->i8lastError = ERR_BAD_SIZE;
 		  modH->u16errCnt++;
-		  //RingClear(modH->xBufferRX); //this is not necessary the ring buffer is cleaned by the read operation
+
+		  #if ENABLE_TCP ==1
+		  if(modH-> u8TypeHW == TCP_HW)
+		  {
+			  netconn_close(modH->newconn);
+			  netbuf_delete(inbuf);
+			  netconn_delete(modH->newconn);
+		  }
+          #endif
+
 		  continue;
 	  }
 
 
 		// check slave id
-	  if ( modH->au8Buffer[ID] !=  modH->u8id) continue;
+	  if ( modH->au8Buffer[ID] !=  modH->u8id)   //for Modbus TCP this is not validated, user should modify accordingly if needed
+	  {
+        #if ENABLE_TCP ==1
+		  if(modH-> u8TypeHW == TCP_HW)
+		  {
+			  netconn_close(modH->newconn);
+			  netbuf_delete(inbuf);
+			  netconn_delete(modH->newconn);
+		  }
+        #endif
+
+		  continue;
+
+	  }
+
 
 	  // validate message: CRC, FCT, address and size
 	  uint8_t u8exception = validateRequest(modH);
@@ -421,6 +611,15 @@ void StartTaskModbusSlave(void *argument)
 		  }
 		  modH->i8lastError = u8exception;
 		  //return u8exception
+
+          #if ENABLE_TCP ==1
+		  if(modH-> u8TypeHW == TCP_HW)
+		  {
+		  	  netconn_close(modH->newconn);
+		      netbuf_delete(inbuf);
+		  	  netconn_delete(modH->newconn);
+		  }
+          #endif
 		  continue;
 	  }
 
@@ -456,6 +655,16 @@ void StartTaskModbusSlave(void *argument)
 			default:
 				break;
 	    }
+
+		#if ENABLE_TCP ==1
+	    if(modH-> u8TypeHW == TCP_HW)
+	    {
+	        netconn_close(modH->newconn);
+	    	netbuf_delete(inbuf);
+	    	netconn_delete(modH->newconn);
+	    }
+        #endif
+
 
 	    xSemaphoreGive(modH->ModBusSphrHandle); //Release the semaphore
 	    //return i8state;
@@ -622,8 +831,11 @@ void StartTaskModbusMaster(void *argument)
 	  /*Wait indefinitely for a telegram to send */
 	  xQueueReceive(modH->QueueTelegramHandle, &telegram, portMAX_DELAY);
 
+
 	  /*Format and Send query */
 	  SendQuery(modH, telegram);
+
+
 
 	  /* Block indefinitely until a Modbus Frame arrives or query timeouts*/
 	  ulNotificationValue = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
@@ -857,14 +1069,34 @@ int8_t getRxBuffer(modbusHandler_t *modH)
 uint8_t validateRequest(modbusHandler_t *modH)
 {
 	// check message crc vs calculated crc
-	    uint16_t u16MsgCRC =
-	        ((modH->au8Buffer[modH->u8BufferSize - 2] << 8)
-	         | modH->au8Buffer[modH->u8BufferSize - 1]); // combine the crc Low & High bytes
+
+#if ENABLE_TCP ==1
+	    uint16_t u16MsgCRC;
+		    u16MsgCRC= ((modH->au8Buffer[modH->u8BufferSize - 2] << 8)
+		   	         | modH->au8Buffer[modH->u8BufferSize - 1]); // combine the crc Low & High bytes
+
+	    if (modH->u8TypeHW != TCP_HW)
+	    {
+	    	if ( calcCRC( modH->au8Buffer,  modH->u8BufferSize-2 ) != u16MsgCRC )
+	    	{
+	    		modH->u16errCnt ++;
+	    		return NO_REPLY;
+	    		}
+	    }
+#else
+	    uint16_t u16MsgCRC;
+	    u16MsgCRC= ((modH->au8Buffer[modH->u8BufferSize - 2] << 8)
+	    		   	         | modH->au8Buffer[modH->u8BufferSize - 1]); // combine the crc Low & High bytes
+
+
 	    if ( calcCRC( modH->au8Buffer,  modH->u8BufferSize-2 ) != u16MsgCRC )
 	    {
-	    	modH->u16errCnt ++;
-	        return NO_REPLY;
+	       		modH->u16errCnt ++;
+	       		return NO_REPLY;
 	    }
+
+
+#endif
 
 	    // check fct code
 	    bool isSupported = false;
@@ -1002,12 +1234,24 @@ extern uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len);
 void sendTxBuffer(modbusHandler_t *modH)
 {
     // append CRC to message
-    uint16_t u16crc = calcCRC(modH->au8Buffer, modH->u8BufferSize);
+
+#if  ENABLE_TCP == 1
+if(modH->u8TypeHW != TCP_HW)
+	 {
+#endif
+
+	uint16_t u16crc = calcCRC(modH->au8Buffer, modH->u8BufferSize);
     modH->au8Buffer[ modH->u8BufferSize ] = u16crc >> 8;
     modH->u8BufferSize++;
     modH->au8Buffer[ modH->u8BufferSize ] = u16crc & 0x00ff;
     modH->u8BufferSize++;
-#if ENABLE_USB_CDC ==1
+
+#if ENABLE_TCP == 1
+	 }
+#endif
+
+
+#if ENABLE_USB_CDC == 1 || ENABLE_TCP == 1
     if(modH->u8TypeHW == USART_HW)
     {
 #endif
@@ -1044,9 +1288,10 @@ void sendTxBuffer(modbusHandler_t *modH)
          {
  	    	xTimerReset(modH->xTimerTimeout,0);
          }
-#if ENABLE_USB_CDC == 1
+#if ENABLE_USB_CDC == 1 || ENABLE_TCP == 1
     }
 
+#if ENABLE_USB_CDC == 1
     else if(modH->u8TypeHW == USB_CDC_HW)
 	{
     	CDC_Transmit_FS(modH->au8Buffer,  modH->u8BufferSize);
@@ -1057,6 +1302,48 @@ void sendTxBuffer(modbusHandler_t *modH)
     	}
 
 	}
+#endif
+
+#if ENABLE_TCP == 1
+
+    else if(modH->u8TypeHW == TCP_HW)
+    	{
+
+    	  struct netvector  xNetVectors[2];
+    	  uint8_t u8MBAPheader[6];
+    	  size_t uBytesWritten;
+
+
+    	  u8MBAPheader[0] = highByte(modH->u16TransactionID);
+    	  u8MBAPheader[1] = lowByte(modH->u16TransactionID);
+    	  u8MBAPheader[2] = 0; //protocol ID
+    	  u8MBAPheader[3] = 0; //protocol ID
+    	  u8MBAPheader[4] = 0; //highbyte data length always 0
+    	  u8MBAPheader[5] = modH->u8BufferSize; //highbyte data length
+
+    	  xNetVectors[0].len = 6;
+    	  xNetVectors[0].ptr = (void *) u8MBAPheader;
+
+    	  xNetVectors[1].len = modH->u8BufferSize;
+    	  xNetVectors[1].ptr = (void *) modH->au8Buffer;
+
+
+        	//CDC_Transmit_FS(modH->au8Buffer,  modH->u8BufferSize);
+        	//// set timeout for master query
+        	//if(modH->uiModbusType == MASTER_RTU )
+        	//{
+        	//   	xTimerReset(modH->xTimerTimeout,0);
+        	//}
+
+    	    netconn_write_vectors_partly(modH->newconn, xNetVectors, 2, NETCONN_NOCOPY, &uBytesWritten);
+    	    if(modH->uiModbusType == MASTER_RTU )
+    	    {
+    	       	xTimerReset(modH->xTimerTimeout,0);
+    	    }
+    	}
+
+#endif
+
 #endif
 
 

@@ -9,7 +9,6 @@
 #define THIRD_PARTY_MODBUS_INC_MODBUS_H_
 
 #include <inttypes.h>
-#include "main.h"
 #include <stdbool.h>
 #include "FreeRTOS.h"
 #include "cmsis_os.h"
@@ -17,8 +16,13 @@
 #include "queue.h"
 #include "timers.h"
 
+//#ifndef ENABLE_USB_CDC
+//#define ENABLE_USB_CDC 1  // define this constant in main.h
+//#endif
 
-#define ENABLE_USB_CDC 0  //Enable the USB CDC support and examples
+//#ifndef ENABLE_TCP
+#define ENABLE_TCP 1     // define this constant in main.h
+//#endif
 
 #define T35  5
 #define MAX_BUFFER  128	//!< maximum size for the communication buffer in bytes. 一次讀取上限，最大128 Byte
@@ -51,6 +55,10 @@ enum
     USART_HW = 1,
 #if ENABLE_USB_CDC == 1
     USB_CDC_HW = 2,
+#endif
+
+#if ENABLE_TCP == 1
+    TCP_HW = 3,
 #endif
 
 };
@@ -125,9 +133,14 @@ typedef struct
 	osSemaphoreId_t ModBusSphrHandle;
 	// RX ring buffer for USART
 	modbusRingBuffer_t xBufferRX;
-#if ENABLE_USB_CDC == 1
+#if ENABLE_USB_CDC == 1 || ENABLE_TCP ==1
 	uint8_t u8TypeHW;
 	//int16_t i16LenRx;
+#endif
+#if ENABLE_TCP == 1
+	uint16_t uTcpPort;
+	struct netconn *newconn;
+	uint16_t u16TransactionID;
 #endif
 
 }
