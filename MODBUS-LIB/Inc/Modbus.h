@@ -8,6 +8,8 @@
 #ifndef THIRD_PARTY_MODBUS_INC_MODBUS_H_
 #define THIRD_PARTY_MODBUS_INC_MODBUS_H_
 
+
+#include "ModbusConfig.h"
 #include <inttypes.h>
 #include <stdbool.h>
 #include "FreeRTOS.h"
@@ -16,52 +18,43 @@
 #include "queue.h"
 #include "timers.h"
 
-//#ifndef ENABLE_USB_CDC
-//#define ENABLE_USB_CDC 1  // define this constant in main.h
-//#endif
 
-//#ifndef ENABLE_TCP
-#define ENABLE_TCP 1     // define this constant in main.h
-//#endif
-
-#define T35  5
-#define MAX_BUFFER  128	//!< maximum size for the communication buffer in bytes. 一次讀取上限，最大128 Byte
-#define TIMEOUT_MODBUS 1000
-#define MAX_M_HANDLERS 2
-#define MAX_TELEGRAMS 2 //Max number of Telegrams for master
-
-/**
- * @struct modbus_t
- * @brief
- * Master query structure:
- * This includes all the necessary fields to make the Master generate a Modbus query.
- * A Master may keep several of these structures and send them cyclically or
- * use them according to program needs.
- */
-typedef struct
-{
-    uint8_t u8id;          /*!< Slave address between 1 and 247. 0 means broadcast */
-    uint8_t u8fct;         /*!< Function code: 1, 2, 3, 4, 5, 6, 15 or 16 */
-    uint16_t u16RegAdd;    /*!< Address of the first register to access at slave/s */
-    uint16_t u16CoilsNo;   /*!< Number of coils or registers to access */
-    uint16_t *au16reg;     /*!< Pointer to memory image in master */
-    uint32_t *u32CurrentTask; /*!< Pointer to the task that will receive notifications from Modbus */
-}
-modbus_t;
-
-
-enum
+typedef enum
 {
     USART_HW = 1,
-#if ENABLE_USB_CDC == 1
     USB_CDC_HW = 2,
-#endif
-
-#if ENABLE_TCP == 1
     TCP_HW = 3,
-#endif
+}mb_hardware_t ;
 
-};
+
+typedef enum
+{
+    MB_SLAVE = 3,
+    MB_MASTER = 4
+}mb_masterslave_t ;
+
+
+
+/**
+ * @enum MB_FC
+ * @brief
+ * Modbus function codes summary.
+ * These are the implement function codes either for Master or for Slave.
+ *
+ * @see also fctsupported
+ * @see also modbus_t
+ */
+typedef enum MB_FC
+{
+    MB_FC_READ_COILS               = 1,	 /*!< FCT=1 -> read coils or digital outputs */
+    MB_FC_READ_DISCRETE_INPUT      = 2,	 /*!< FCT=2 -> read digital inputs */
+    MB_FC_READ_REGISTERS           = 3,	 /*!< FCT=3 -> read registers or analog outputs */
+    MB_FC_READ_INPUT_REGISTER      = 4,	 /*!< FCT=4 -> read analog inputs */
+    MB_FC_WRITE_COIL               = 5,	 /*!< FCT=5 -> write single coil or output */
+    MB_FC_WRITE_REGISTER           = 6,	 /*!< FCT=6 -> write single register */
+    MB_FC_WRITE_MULTIPLE_COILS     = 15, /*!< FCT=15 -> write multiple coils or outputs */
+    MB_FC_WRITE_MULTIPLE_REGISTERS = 16	 /*!< FCT=16 -> write multiple registers */
+}mb_functioncode_t;
 
 
 typedef struct
@@ -74,6 +67,89 @@ uint8_t u8available;
 
 
 
+
+/**
+ * @enum MESSAGE
+ * @brief
+ * Indexes to telegram frame positions
+ */
+typedef enum MESSAGE
+{
+    ID                             = 0, //!< ID field
+    FUNC, //!< Function code position
+    ADD_HI, //!< Address high byte
+    ADD_LO, //!< Address low byte
+    NB_HI, //!< Number of coils or registers high byte
+    NB_LO, //!< Number of coils or registers low byte
+    BYTE_CNT  //!< byte counter
+}mb_message_t;
+
+typedef enum COM_STATES
+{
+    COM_IDLE                     = 0,
+    COM_WAITING                  = 1
+}mb_com_state_t;
+
+typedef enum ERR_LIST
+{
+    ERR_NOT_MASTER                = -1,
+    ERR_POLLING                   = -2,
+    ERR_BUFF_OVERFLOW             = -3,
+    ERR_BAD_CRC                   = -4,
+    ERR_EXCEPTION                 = -5,
+    ERR_BAD_SIZE                  = -6,
+    ERR_BAD_ADDRESS               = -7,
+    ERR_TIME_OUT		          = -8,
+    ERR_BAD_SLAVE_ID		      = -9
+
+}mb_errot_t;
+
+enum
+{
+    //NO_REPLY = 255,
+    EXC_FUNC_CODE = 1,
+    EXC_ADDR_RANGE = 2,
+    EXC_REGS_QUANT = 3,
+    EXC_EXECUTE = 4
+};
+
+typedef union {
+	uint8_t  u8[4];
+	uint16_t u16[2];
+	uint32_t u32;
+
+} bytesFields ;
+
+
+
+
+
+/**
+ * @struct modbus_t
+ * @brief
+ * Master query structure:
+ * This structure contains all the necessary fields to make the Master generate a Modbus query.
+ * A Master may keep several of these structures and send them cyclically or
+ * use them according to program needs.
+ */
+typedef struct
+{
+    uint8_t u8id;          /*!< Slave address between 1 and 247. 0 means broadcast */
+    mb_functioncode_t u8fct;         /*!< Function code: 1, 2, 3, 4, 5, 6, 15 or 16 */
+    uint16_t u16RegAdd;    /*!< Address of the first register to access at slave/s */
+    uint16_t u16CoilsNo;   /*!< Number of coils or registers to access */
+    uint16_t *u16reg;     /*!< Pointer to memory image in master */
+    uint32_t *u32CurrentTask; /*!< Pointer to the task that will receive notifications from Modbus */
+#if ENABLE_TCP ==1
+    uint32_t   xIpAddress;
+    uint16_t u16Port;
+#endif
+}
+modbus_t;
+
+
+
+
 /**
  * @struct modbusHandler_t
  * @brief
@@ -82,38 +158,20 @@ uint8_t u8available;
  */
 typedef struct
 {
-       /*
-	* uint8_t uiModbusType;
-	* UART_HandleTypeDef *port;	 //始能串口
-	* uint8_t u8id;             	 //0為Master  1~247為Slave
-	* GPIO_TypeDef* EN_Port;   	 //0為USB與RS232模式 1為485模式(待測試) [RE<--->DE]
-	* uint16_t EN_Pin;  	    	 //輸出針腳
-	* int8_t i8lastError;	
-	* uint8_t au8Buffer[MAX_BUFFER]; //用於通訊的Modbus緩衝區 
-	* uint8_t u8BufferSize;
-	* uint8_t u8lastRec;
-	* uint16_t *au16regs;
-	* uint16_t u16InCnt, u16OutCnt, u16errCnt; //保留Modbus流量的統計信息 
-	* uint16_t u16timeOut;
-	* uint32_t u32time, u32timeOut, u32overTime;
-	* uint16_t u16regsize;
-	* uint8_t dataRX;
-	* int8_t i8state;
-	*/
-	
-	uint8_t uiModbusType;
+
+	mb_masterslave_t uModbusType;
 	UART_HandleTypeDef *port; //HAL Serial Port handler
 	uint8_t u8id; //!< 0=master, 1..247=slave number
 	GPIO_TypeDef* EN_Port; //!< flow control pin: 0=USB or RS-232 mode, >1=RS-485 mode
 	uint16_t EN_Pin;  //!< flow control pin: 0=USB or RS-232 mode, >1=RS-485 mode
-	int8_t i8lastError;
-	uint8_t au8Buffer[MAX_BUFFER]; //Modbus buffer for communication
+	mb_errot_t i8lastError;
+	uint8_t u8Buffer[MAX_BUFFER]; //Modbus buffer for communication
 	uint8_t u8BufferSize;
 	uint8_t u8lastRec;
-	uint16_t *au16regs;
+	uint16_t *u16regs;
 	uint16_t u16InCnt, u16OutCnt, u16errCnt; //keep statistics of Modbus traffic
 	uint16_t u16timeOut;
-	uint32_t u32time, u32timeOut, u32overTime;
+	uint32_t u32time, u32timeOut;
 	uint16_t u16regsize;
 	uint8_t dataRX;
 	int8_t i8state;
@@ -133,14 +191,14 @@ typedef struct
 	osSemaphoreId_t ModBusSphrHandle;
 	// RX ring buffer for USART
 	modbusRingBuffer_t xBufferRX;
-#if ENABLE_USB_CDC == 1 || ENABLE_TCP ==1
-	uint8_t u8TypeHW;
-	//int16_t i16LenRx;
-#endif
+	// type of hardware  TCP, USB CDC, USART
+	mb_hardware_t xTypeHW;
+
 #if ENABLE_TCP == 1
 	uint16_t uTcpPort;
 	struct netconn *newconn;
 	uint16_t u16TransactionID;
+	uint32_t xIpAddress;
 #endif
 
 }
@@ -152,96 +210,13 @@ enum
     RESPONSE_SIZE = 6,
     EXCEPTION_SIZE = 3,
     CHECKSUM_SIZE = 2
-
-};
-
-
-enum
-{
-    SLAVE_RTU = 3,
-    MASTER_RTU = 4
-	//SLAVE_TCP = 5,
-	//MASTER_TCP =6,
-
 };
 
 
 
 
-/**
- * @enum MESSAGE
- * @brief
- * Indexes to telegram frame positions
- */
-enum MESSAGE
-{
-    ID                             = 0, //!< ID field
-    FUNC, //!< Function code position
-    ADD_HI, //!< Address high byte
-    ADD_LO, //!< Address low byte
-    NB_HI, //!< Number of coils or registers high byte
-    NB_LO, //!< Number of coils or registers low byte
-    BYTE_CNT  //!< byte counter
-};
 
-/**
- * @enum MB_FC
- * @brief
- * Modbus function codes summary.
- * These are the implement function codes either for Master or for Slave.
- *
- * @see also fctsupported
- * @see also modbus_t
- */
-enum MB_FC
-{
-    MB_FC_NONE                     = 0, /*!< null operator */
-    MB_FC_READ_COILS               = 1,	/*!< FCT=1 -> read coils or digital outputs */
-    MB_FC_READ_DISCRETE_INPUT      = 2,	/*!< FCT=2 -> read digital inputs */
-    MB_FC_READ_REGISTERS           = 3,	/*!< FCT=3 -> read registers or analog outputs */
-    MB_FC_READ_INPUT_REGISTER      = 4,	/*!< FCT=4 -> read analog inputs */
-    MB_FC_WRITE_COIL               = 5,	/*!< FCT=5 -> write single coil or output */
-    MB_FC_WRITE_REGISTER           = 6,	/*!< FCT=6 -> write single register */
-    MB_FC_WRITE_MULTIPLE_COILS     = 15,	/*!< FCT=15 -> write multiple coils or outputs */
-    MB_FC_WRITE_MULTIPLE_REGISTERS = 16	/*!< FCT=16 -> write multiple registers */
-};
 
-enum COM_STATES
-{
-    COM_IDLE                     = 0,
-    COM_WAITING                  = 1
-
-};
-
-enum ERR_LIST
-{
-    ERR_NOT_MASTER                = -1,
-    ERR_POLLING                   = -2,
-    ERR_BUFF_OVERFLOW             = -3,
-    ERR_BAD_CRC                   = -4,
-    ERR_EXCEPTION                 = -5,
-    ERR_BAD_SIZE                  = -6,
-    ERR_BAD_ADDRESS               = -7,
-    ERR_TIME_OUT		  = -8,
-    ERR_BAD_SLAVE_ID		  = -9
-
-};
-
-enum
-{
-    NO_REPLY = 255,
-    EXC_FUNC_CODE = 1,
-    EXC_ADDR_RANGE = 2,
-    EXC_REGS_QUANT = 3,
-    EXC_EXECUTE = 4
-};
-
-typedef union {
-	uint8_t  u8[4];
-	uint16_t u16[2];
-	uint32_t u32;
-
-} bytesFields ;
 
 
 modbusHandler_t *mHandlers[MAX_M_HANDLERS];
