@@ -1,7 +1,7 @@
 
 
 # Modbus library for STM32 Microcontrollers
-USART and USB-CDC Modbus RTU Master and Slave library for STM32 microcontrollers 
+TCP, USART and USB-CDC Modbus RTU Master and Slave library for STM32 microcontrollers 
 based on Cube HAL and FreeRTOS.
 
 Includes multiple examples for popular development boards including BluePill, NUCLEO-64, 
@@ -20,7 +20,8 @@ Traditional Chinese: [繁體中文](TraditionalChineseREADME.md)
 - Multiple instances of Modbus (Master and/or Slave) can run concurrently in the same MCU,
   only limited by the number of available UART/USART of the MCU.
 - RS232 and RS485 compatible.
-- NEW: USB-CDC support 
+- USB-CDC support 
+- New TCP master and slave support, this is work in progress in branch [TCPsupport](https://github.com/alejoseb/Modbus-STM32-HAL-FreeRTOS/tree/TCPsupport) with examples for F429 and H743 MCUs.
 
 
 
