@@ -5,7 +5,7 @@
  *      Author: Alejandro Mera
  *
  *  This is a template for the Modbus library configuration.
- *  Every project needs configure and include a copy of this file renamed to ModbusConfig.h
+ *  Every project needs a tailored copy of this file renamed to ModbusConfig.h, and added to the include path.
  */
 
 #ifndef THIRD_PARTY_MODBUS_LIB_CONFIG_MODBUSCONFIG_H_
