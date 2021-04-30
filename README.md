@@ -1,7 +1,7 @@
 
 
 # Modbus library for STM32 Microcontrollers
-USART and USB-CDC Modbus RTU Master and Slave library for STM32 microcontrollers 
+TCP, USART and USB-CDC Modbus RTU Master and Slave library for STM32 microcontrollers 
 based on Cube HAL and FreeRTOS.
 
 Includes multiple examples for popular development boards including BluePill, NUCLEO-64, 
@@ -20,7 +20,8 @@ Traditional Chinese: [繁體中文](TraditionalChineseREADME.md)
 - Multiple instances of Modbus (Master and/or Slave) can run concurrently in the same MCU,
   only limited by the number of available UART/USART of the MCU.
 - RS232 and RS485 compatible.
-- NEW: USB-CDC support 
+- USB-CDC support 
+- `NEW TCP master and slave support examples for F429 and H743 MCUs.`
 
 
 
@@ -28,19 +29,25 @@ Traditional Chinese: [繁體中文](TraditionalChineseREADME.md)
 ```
 ├── LICENSE
 ├── README.md
-├── ModbusBluepill --> STM32F103C8 USART Slave example
-├── ModbusBluepillUSB --> STM32F103C8 USART + USB-CDC Master and Slave example
-├── ModbusF103 --> NUCLEO64-F103RB Modbus Master and Slave example
-├── ModbusF429 --> NUCLEO144-F429ZI Modbus Slave example
-├── ModbusH743 --> NUCLEO144-H743ZI Modbus Slave example
-├── ModbusF303 --> NUCLEO64-F303RE Modbus Slave example
-├── ModbusSTM32F4-discovery --> STM32F4-discovery TouchGFX + Modbus Master example
+├── Examples
+    ├── ModbusBluepill --> STM32F103C8 USART Slave example
+    ├── ModbusBluepillUSB --> STM32F103C8 USART + USB-CDC Master and Slave example
+    ├── ModbusF103 --> NUCLEO64-F103RB Modbus Master and Slave example
+    ├── ModbusF429 --> NUCLEO144-F429ZI Modbus Slave example
+    ├── ModbusF429TCP --> NUCLEO144-F429ZI Modbus TCP example
+    ├── ModbusH743 --> NUCLEO144-H743ZI Modbus Slave example
+    ├── ModbusH743TCP --> NUCLEO144-H743ZI Modbus TCP example
+    ├── ModbusF303 --> NUCLEO64-F303RE Modbus Slave example
+    ├── ModbusSTM32F4-discovery --> STM32F4-discovery TouchGFX + Modbus Master example
 ├── MODBUS-LIB --> Library Folder
     ├── Inc
     │   └── Modbus.h 
+    ├── Config
+    │   └── ModbusConfigTemplate.h 
     └── Src
         ├── Modbus.c 
-        └── UARTCallback.c 
+        └── UARTCallback.c
+ 
 ```
 ## How to use the examples
 Examples provided for STM32CubeIDE Version: 1.3.0 https://www.st.com/en/development-tools/stm32cubeide.html.
@@ -49,16 +56,14 @@ Examples provided for STM32CubeIDE Version: 1.3.0 https://www.st.com/en/developm
 - Connect your NUCLEO board
 - Compile and start your debugging session!
 - If you need to adjust the Baud rate or any other parameter use the Cube-MX assistant (recommended). If you change the USART port you need to enable the interrupts for the selected USART. Check UARTCallback.c for more details.
-- For the ModbusF103 example, you need and extra USB-to-serial adapter, or you can connect the Master and Slave instances in a loopback (USART1 <--> USART3).
 
-### NOTE:
+### NOTE 1:
 The USB-CDC example supports only the Bluepill development board. It has not been validated with other development boards.
-To use this example, you need to activate the USB-CDC in the following line in Modbus.h file:
+To use this example, you need to activate USB-CDC in your ModbusConfig.h file.
 
-https://github.com/alejoseb/Modbus-STM32-HAL-FreeRTOS/blob/1d98194b3f0643edad694bf85cef9b25189204a5/MODBUS-LIB/Inc/Modbus.h#L21
-
-
-Modbus instances over USART and USB-CDC  can run simultaneously in Master or Slave modes concurrently. It is restricted to 1 USB-CDC interface and 3 USART interfaces for the Bluepill Board.
+### NOTE 2:
+The TCP examples have been validated with NUCLEO F429ZI and H743ZI. 
+To use these examples, you need to activate TCP in your ModbusConfig.h file.
 
 
 ## How to port to your own MCU
@@ -68,6 +73,7 @@ Modbus instances over USART and USB-CDC  can run simultaneously in Master or Sla
 - Import the Modbus library folder (MODBUS-LIB) using drag-and-drop from your host operating system to your STM32Cube IDE project
 - When asked, choose link folders and files
 - Update the include paths in the project's properties to include the `Inc` folder of MODBUS-LIB folder
+- Create a ModbusConfig.h using the ModbusConfigTemplate.h and add it to your project in your include path
 - Instantiate a new global modbusHandler_t and follow the examples provided in the repository 
 - `Note:` If the USART interrupts service for other purposes you have to modify the UARTCalback.c file accordingly
 
@@ -89,4 +95,4 @@ Windows: https://sourceforge.net/projects/modrssim2/
 - Improve function documentation
 - ~~Improve the queue for data reception; the current method is too heavy it should be replaced with a simple buffer, a stream, or another FreeRTOS primitive.~~ Solved Queue repalced by a Ring Buffer (03/19/2021)
 - ~~Test with Rs485 transceivers (implemented but not tested)~~ Verified with MAX485 transceivers (01/03/2021)
-- MODBUS TCP implementation
+- ~~MODBUS TCP implementation (28/04/2021)
