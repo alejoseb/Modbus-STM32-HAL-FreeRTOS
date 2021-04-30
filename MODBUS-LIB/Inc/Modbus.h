@@ -197,6 +197,7 @@ typedef struct
 #if ENABLE_TCP == 1
 	uint16_t uTcpPort;
 	struct netconn *newconn;
+	struct netconn *conn;
 	uint16_t u16TransactionID;
 	uint32_t xIpAddress;
 #endif

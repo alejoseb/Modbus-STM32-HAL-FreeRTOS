@@ -52,15 +52,15 @@
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
   .name = "defaultTask",
+  .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
-  .stack_size = 128 * 4
 };
 /* Definitions for myTaskModbusTes */
 osThreadId_t myTaskModbusTesHandle;
 const osThreadAttr_t myTaskModbusTes_attributes = {
   .name = "myTaskModbusTes",
+  .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityLow,
-  .stack_size = 256 * 4
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -151,17 +151,18 @@ void StartTask02(void *argument)
 	uint32_t u32NotificationValue;
 
 	telegram.u8id = 1; // slave address
-	telegram.u8fct = 3; // function code (this one is registers read)
+	telegram.u8fct = MB_FC_WRITE_MULTIPLE_REGISTERS; // function code (this one is registers read)
 	//telegram.u16RegAdd = 0x160; // start address in slave
 	telegram.u16RegAdd = 0x0; // start address in slave
 	telegram.u16CoilsNo = 10; // number of elements (coils or registers) to read
 	telegram.u16reg = ModbusDATA; // pointer to a memory array in the Arduino
-	IP_ADDR4((ip4_addr_t *)&telegram.xIpAddress, 192, 168, 0, 11); //address of the slave
+	IP_ADDR4((ip4_addr_t *)&telegram.xIpAddress, 192, 168, 0, 12); //address of the slave
 	telegram.u16Port = 502;
 
 	for(;;)
 	{
 	    /* Send query Modbus TCP */
+		ModbusDATA[0]++;
 		ModbusQuery(&ModbusH, telegram); // make a query
 	    u32NotificationValue = ulTaskNotifyTake(pdTRUE, portMAX_DELAY); // block until query finishes or timeouts
 	    if(u32NotificationValue)
@@ -171,6 +172,7 @@ void StartTask02(void *argument)
 	    }
 
 	    /* Update input from */
+
 	    xSemaphoreTake(ModbusH2.ModBusSphrHandle , portMAX_DELAY);
 	    HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, ModbusH2.u16regs[0] & 0x1);
 	    xSemaphoreGive(ModbusH2.ModBusSphrHandle);

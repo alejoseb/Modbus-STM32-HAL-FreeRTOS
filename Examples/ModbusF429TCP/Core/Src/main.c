@@ -98,7 +98,7 @@ int main(void)
 
   /* Modbus TCP initialization */
 
-  //ModbusH.uiModbusType = SLAVE_RTU;
+  //ModbusH.uModbusType = MB_SLAVE;
   ModbusH.uModbusType = MB_MASTER;
   //ModbusH.port =  &huart3; //this is not used for TCP
   //ModbusH.u8id = 1; //slave ID
@@ -110,6 +110,7 @@ int main(void)
   ModbusH.u16regs = ModbusDATA;
   ModbusH.u16regsize= sizeof(ModbusDATA)/sizeof(ModbusDATA[0]);
   ModbusH.xTypeHW = TCP_HW; // TCP hardware
+  ModbusH.uTcpPort = 502;
 
   //Initialize Modbus library
   ModbusInit(&ModbusH);
