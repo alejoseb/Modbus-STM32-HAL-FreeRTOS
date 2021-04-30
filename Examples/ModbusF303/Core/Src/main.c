@@ -95,14 +95,14 @@ int main(void)
 
   /* Slave initialization */
 
-  ModbusH.uiModbusType = SLAVE_RTU;
+  ModbusH.uModbusType = MB_SLAVE;
   ModbusH.port =  &huart2;
   ModbusH.u8id = 1;
   ModbusH.u16timeOut = 1000;
   ModbusH.EN_Port = NULL;
-  ModbusH.u32overTime = 0;
-  ModbusH.au16regs = ModbusDATA;
-  ModbusH.u8regsize= sizeof(ModbusDATA)/sizeof(ModbusDATA[0]);
+  ModbusH.u16regs = ModbusDATA;
+  ModbusH.u16regsize= sizeof(ModbusDATA)/sizeof(ModbusDATA[0]);
+  ModbusH.xTypeHW = USART_HW;
   //Initialize Modbus library
   ModbusInit(&ModbusH);
   //Start capturing traffic on serial Port

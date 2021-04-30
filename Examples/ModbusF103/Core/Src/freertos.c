@@ -161,7 +161,7 @@ void StartTaskMaster(void *argument)
   //telegram[0].u16RegAdd = 0x160; // start address in slave
   telegram[0].u16RegAdd = 0x0; // start address in slave
   telegram[0].u16CoilsNo = 1; // number of elements (coils or registers) to read
-  telegram[0].au16reg = ModbusDATA; // pointer to a memory array in the Arduino
+  telegram[0].u16reg = ModbusDATA; // pointer to a memory array in the Arduino
 
 
   // telegram 0: read registers
@@ -170,7 +170,7 @@ void StartTaskMaster(void *argument)
   //telegram[1].u16RegAdd = 0x160; // start address in slave
   telegram[1].u16RegAdd = 0x0;
   telegram[1].u16CoilsNo = 1; // number of elements (coils or registers) to read
-  telegram[1].au16reg = ModbusDATA; // pointer to a memory array in the Arduino
+  telegram[1].u16reg = ModbusDATA; // pointer to a memory array in the Arduino
 
 
 
@@ -214,7 +214,7 @@ void StartTaskSlave(void *argument)
   {
 
 	xSemaphoreTake(ModbusH2.ModBusSphrHandle , portMAX_DELAY);
-	HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, ModbusH2.au16regs[0] & 0x1);
+	HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, ModbusH2.u16regs[0] & 0x1);
 	xSemaphoreGive(ModbusH2.ModBusSphrHandle);
 	osDelay(200);
 

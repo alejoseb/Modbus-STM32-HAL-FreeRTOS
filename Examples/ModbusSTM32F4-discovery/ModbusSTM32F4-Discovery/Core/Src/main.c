@@ -192,17 +192,17 @@ int main(void)
 
   HAL_UART_Transmit(&huart1,(uint8_t *)data, 10, 1000);
   /* Modbus Slave initialization */
- // ModbusH.uiModbusType = MASTER_RTU;
-  ModbusH.uiModbusType = MASTER_RTU;
+ // ModbusH.uModbusType = MB_MASTER;
+  ModbusH.uModbusType = MB_MASTER;
   ModbusH.port =  &huart1; // This is the UART port connected to STLINK in the discovery F429
   ModbusH.u8id = 0; //Master ID
   ModbusH.u16timeOut = 1000;
   ModbusH.EN_Port = NULL; // No RS485
    //ModbusH2.EN_Port = LD2_GPIO_Port; // RS485 Enable
    //ModbusH2.EN_Pin = LD2_Pin; // RS485 Enable
-  ModbusH.u32overTime = 0;
-  ModbusH.au16regs = ModbusDATARX;
+  ModbusH.u16regs = ModbusDATARX;
   ModbusH.u16regsize= sizeof(ModbusDATARX)/sizeof(ModbusDATARX[0]);
+  ModbusH.xTypeHW = USART_HW;
    //Initialize Modbus library
   ModbusInit(&ModbusH);
   //Start capturing traffic on serial Port

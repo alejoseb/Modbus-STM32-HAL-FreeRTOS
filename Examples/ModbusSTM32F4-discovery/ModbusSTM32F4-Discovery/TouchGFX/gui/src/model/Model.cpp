@@ -24,7 +24,7 @@ void Model::tick()
 	       telegram[0].u8fct = MB_FC_READ_REGISTERS; // function code (this one is registers write)
 	       telegram[0].u16RegAdd = 0x0;
 	       telegram[0].u16CoilsNo = 1; // number of elements (coils or registers) to read
-	       telegram[0].au16reg = ModbusDATARX; // pointer to a memory array
+	       telegram[0].u16reg = ModbusDATARX; // pointer to a memory array
 	       ModbusQuery(&ModbusH, telegram[0]);
 	       //if(reg != ModbusDATARX[0])
 	       //{
@@ -54,7 +54,7 @@ void Model::RegisterUpDown(int value)
 		 telegram[0].u8fct = MB_FC_WRITE_REGISTER; // function code (this one is registers write)
 		 telegram[0].u16RegAdd = 0x0;
 		 telegram[0].u16CoilsNo = 1; // number of elements (coils or registers) to read
-		 telegram[0].au16reg = ModbusDATATX; // pointer to a memory array
+		 telegram[0].u16reg = ModbusDATATX; // pointer to a memory array
 		 ModbusQueryInject(&ModbusH, telegram[0]);
 		 xSemaphoreGive((QueueHandle_t)ModbusH.ModBusSphrHandle);
 
@@ -76,7 +76,7 @@ void Model::LedToggleRequested(bool value)
 	telegram[0].u8fct = MB_FC_WRITE_COIL; // function code (this one is registers write)
 	telegram[0].u16RegAdd = 0x0;
 	telegram[0].u16CoilsNo = 1; // number of elements (coils or registers) to read
-	telegram[0].au16reg = ModbusDATATX; // pointer to a memory array
+	telegram[0].u16reg = ModbusDATATX; // pointer to a memory array
 	//xSemaphoreGive((QueueHandle_t)ModbusH.ModBusSphrHandle);
 	ModbusQueryInject(&ModbusH, telegram[0]);
 

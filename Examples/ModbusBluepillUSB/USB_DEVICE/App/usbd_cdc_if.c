@@ -266,11 +266,11 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
   int i, j;
   for (i = 0; i<numberHandlers; i++ )
   {
-		if (mHandlers[i]->u8TypeHW == USB_CDC_HW  )
+		if (mHandlers[i]->xTypeHW == USB_CDC_HW  )
 	    	{
 	    		for(j=0; j< *Len && j<MAX_BUFFER; j++){
 			    //xQueueSendToBackFromISR( mHandlers[i]->QueueModbusHandle, &Buf[j], pdFALSE);
-	    			mHandlers[i]->au8Buffer[j] = Buf[j];
+	    			mHandlers[i]->u8Buffer[j] = Buf[j];
 	    		}
 	    		if(*Len> MAX_BUFFER)
 	    		{

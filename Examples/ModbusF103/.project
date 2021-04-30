@@ -35,7 +35,7 @@
 		<link>
 			<name>Middlewares/Third_Party/MODBUS-LIB</name>
 			<type>2</type>
-			<locationURI>PARENT-1-PROJECT_LOC/MODBUS-LIB</locationURI>
+			<locationURI>PARENT-2-PROJECT_LOC/MODBUS-LIB</locationURI>
 		</link>
 	</linkedResources>
 </projectDescription>

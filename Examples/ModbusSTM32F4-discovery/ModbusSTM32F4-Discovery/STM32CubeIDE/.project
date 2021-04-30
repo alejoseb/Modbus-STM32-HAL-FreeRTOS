@@ -34,9 +34,9 @@
 	</natures>
 	<linkedResources>
 		<link>
-			<name>Drivers/MODBUS-LIB</name>
+			<name>MODBUS-LIB</name>
 			<type>2</type>
-			<locationURI>PARENT-3-PROJECT_LOC/MODBUS-LIB</locationURI>
+			<locationURI>PARENT-2-WORKSPACE_LOC/Documents/Modbus-STM32-HAL-FreeRTOS/MODBUS-LIB</locationURI>
 		</link>
 		<link>
 			<name>Application/User/freertos.c</name>

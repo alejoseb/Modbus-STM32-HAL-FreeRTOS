@@ -96,14 +96,14 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
 
-  ModbusH.uiModbusType = SLAVE_RTU;
+  ModbusH.uModbusType = MB_SLAVE;
   ModbusH.port =  &huart1;
   ModbusH.u8id = 17; //Modbus slave ID
   ModbusH.u16timeOut = 1000;
   ModbusH.EN_Port = NULL;
-  ModbusH.u32overTime = 0;
-  ModbusH.au16regs = ModbusDATA;
+  ModbusH.u16regs = ModbusDATA;
   ModbusH.u16regsize= sizeof(ModbusDATA)/sizeof(ModbusDATA[0]);
+  ModbusH.xTypeHW = USART_HW;
   //Initialize Modbus library
   ModbusInit(&ModbusH);
   //Start capturing traffic on serial Port
@@ -112,19 +112,19 @@ int main(void)
 #if ENABLE_USB_CDC ==1
 
 #if SLAVE_EX == 1
-  ModbusUSB.uiModbusType = SLAVE_RTU;
+  ModbusUSB.uModbusType = MB_SLAVE;
   ModbusUSB.u8id = 10; //Modbus slave ID
 #else
-  ModbusUSB.uiModbusType = MASTER_RTU;
+  ModbusUSB.uModbusType = MB_MASTER;
   ModbusUSB.u8id = 0; //Modbus master ID must be 0
 #endif
   ModbusUSB.port =  NULL;
 
   ModbusUSB.u16timeOut = 1000;
   ModbusUSB.EN_Port = NULL;
-  ModbusUSB.u32overTime = 0;
-  ModbusUSB.au16regs = ModbusDATAusb;
+  ModbusUSB.u16regs = ModbusDATAusb;
   ModbusUSB.u16regsize= sizeof(ModbusDATAusb)/sizeof(ModbusDATAusb[0]);
+  ModbusH.xTypeHW = USART_HW;
   //Initialize Modbus library
   ModbusInit(&ModbusUSB);
   //Start capturing traffic on serial Port

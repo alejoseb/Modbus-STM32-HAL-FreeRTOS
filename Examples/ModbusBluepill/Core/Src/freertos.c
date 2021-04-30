@@ -149,7 +149,7 @@ void StartTaskSlave(void *argument)
   for(;;)
   {
 	  xSemaphoreTake(ModbusH.ModBusSphrHandle , 100);
-	  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, ModbusH.au16regs[0] & 0x1);
+	  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, ModbusH.u16regs[0] & 0x1);
 	  xSemaphoreGive(ModbusH.ModBusSphrHandle);
 	  osDelay(200);
   }

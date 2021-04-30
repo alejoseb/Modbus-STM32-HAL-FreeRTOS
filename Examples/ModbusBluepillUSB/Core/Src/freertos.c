@@ -157,14 +157,14 @@ void StartTaskSlave(void *argument)
 	  telegram[0].u8fct = MB_FC_WRITE_REGISTER; // function code (this one is registers read)
 	  telegram[0].u16RegAdd = 0x0; // start address in slave
 	  telegram[0].u16CoilsNo = 1; // number of elements (coils or registers) to read
-	  telegram[0].au16reg = ModbusDATAusb; // pointer to a memory array
+	  telegram[0].u16reg = ModbusDATAusb; // pointer to a memory array
 
 
 	  telegram[1].u8id = 17; // slave address
 	  telegram[1].u8fct = MB_FC_READ_REGISTERS; // function code (this one is registers read)
 	  telegram[1].u16RegAdd = 0x1; // start address in slave
 	  telegram[1].u16CoilsNo = 1; // number of elements (coils or registers) to read
-	  telegram[1].au16reg = ModbusDATAusb; // pointer to a memory array
+	  telegram[1].u16reg = ModbusDATAusb; // pointer to a memory array
 	  ModbusDATAusb[0] =1;
 
 #endif
@@ -176,7 +176,7 @@ void StartTaskSlave(void *argument)
 #if SLAVE_EX == 1
 	  /**** Slave example CDC ***/
 	  xSemaphoreTake(ModbusUSB.ModBusSphrHandle , 100);
-	  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, ModbusUSB.au16regs[0] & 0x1);
+	  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, ModbusUSB.u16regs[0] & 0x1);
 	  xSemaphoreGive(ModbusUSB.ModBusSphrHandle);
 
 #else

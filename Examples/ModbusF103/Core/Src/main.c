@@ -93,16 +93,16 @@ int main(void)
 
 
   /* Master initialization */
-  ModbusH.uiModbusType = MASTER_RTU;
-  ModbusH.port =  &huart2;
+  ModbusH.uModbusType = MB_MASTER;
+  ModbusH.port =  &huart1;
   ModbusH.u8id = 0; // For master it must be 0
   ModbusH.u16timeOut = 1000;
   ModbusH.EN_Port = NULL;
   ModbusH.EN_Port = EN_485_GPIO_Port;
   ModbusH.EN_Pin = EN_485_Pin;
-  ModbusH.u32overTime = 0;
-  ModbusH.au16regs = ModbusDATA;
+  ModbusH.u16regs = ModbusDATA;
   ModbusH.u16regsize= sizeof(ModbusDATA)/sizeof(ModbusDATA[0]);
+  ModbusH.xTypeHW = USART_HW;
   //Initialize Modbus library
   ModbusInit(&ModbusH);
   //Start capturing traffic on serial Port
@@ -112,17 +112,17 @@ int main(void)
 
   /* Slave initialization */
 
-  ModbusH2.uiModbusType = SLAVE_RTU;
-  ModbusH2.port =  &huart1;
+  ModbusH2.uModbusType = MB_SLAVE;
+  ModbusH2.port =  &huart2;
   ModbusH2.u8id = 17;
   ModbusH2.u16timeOut = 1000;
   ModbusH2.EN_Port = NULL;
   //ModbusH2.EN_Port = LD2_GPIO_Port;
   //ModbusH2.EN_Pin = LD2_Pin;
-  ModbusH2.u32overTime = 0;
-  ModbusH2.au16regs = ModbusDATA2;
+  ModbusH2.u16regs = ModbusDATA2;
   ModbusH2.u16regsize= sizeof(ModbusDATA2)/sizeof(ModbusDATA2[0]);
   //Initialize Modbus library
+  ModbusH2.xTypeHW = USART_HW;
   ModbusInit(&ModbusH2);
   //Start capturing traffic on serial Port
   ModbusStart(&ModbusH2);

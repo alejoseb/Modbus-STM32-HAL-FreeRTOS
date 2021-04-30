@@ -321,6 +321,14 @@ void ModbusInit(modbusHandler_t * modH)
 void ModbusStart(modbusHandler_t * modH)
 {
 
+	if(modH->xTypeHW != USART_HW && modH->xTypeHW != TCP_HW && modH->xTypeHW != USB_CDC_HW)
+	{
+
+		while(1); //ERROR select the type of hardware
+	}
+
+
+
 	if (modH->xTypeHW == USART_HW )
 	{
 
@@ -392,11 +400,8 @@ void ModbusStartCDC(modbusHandler_t * modH)
     	while(1); //ERROR define the DATA pointer shared through Modbus
     }
 
-   // MX_USB_DEVICE_Init();
-
     modH->u8lastRec = modH->u8BufferSize = 0;
     modH->u16InCnt = modH->u16OutCnt = modH->u16errCnt = 0;
-    modH->xTypeHW = USB_CDC_HW;
 }
 #endif
 
@@ -542,7 +547,6 @@ void StartTaskModbusSlave(void *argument)
 {
 
   modbusHandler_t *modH =  (modbusHandler_t *)argument;
-  int8_t i8state;
 
 #if ENABLE_TCP ==1
   if( modH->xTypeHW == TCP_HW )
@@ -562,8 +566,7 @@ void StartTaskModbusSlave(void *argument)
 	  if(modH-> xTypeHW == USB_CDC_HW)
 	  {
 		      ulTaskNotifyTake(pdTRUE, portMAX_DELAY); /* Block indefinitely until a Modbus Frame arrives */
-			  i8state = modH->u8BufferSize; // buffer size is already updated in the interrupt service routine of USB
-			  if (i8state == ERR_BUFF_OVERFLOW)
+			  if (modH->u8BufferSize == ERR_BUFF_OVERFLOW) // is this necessary?
 			  {
 			     modH->i8lastError = ERR_BUFF_OVERFLOW;
 			  	 modH->u16errCnt++;
@@ -582,7 +585,6 @@ void StartTaskModbusSlave(void *argument)
 			  netconn_delete(modH->newconn);
 			  continue; // TCP package was not validated
 		  }
-		  i8state = modH->u8BufferSize;
 
 	  }
 #endif
@@ -596,10 +598,10 @@ void StartTaskModbusSlave(void *argument)
 	  {
 	     HAL_GPIO_WritePin(modH->EN_Port, modH->EN_Pin, GPIO_PIN_RESET); // is this required?
 	   }
-	   i8state = getRxBuffer(modH);
+	   getRxBuffer(modH);
    }
 
-   if (i8state < 7)
+   if (modH->u8BufferSize < 7)
    {
       //The size of the frame is invalid
       modH->i8lastError = ERR_BAD_SIZE;
