@@ -31,6 +31,8 @@
 #define highByte(w) ((w) >> 8)
 
 
+
+
 ///Queue Modbus telegrams for master
 const osMessageQueueAttr_t QueueTelegram_attributes = {
        .name = "QueueModbusTelegram"
@@ -79,7 +81,7 @@ uint8_t numberHandlers = 0;
 
 
 static void sendTxBuffer(modbusHandler_t *modH);
-static int8_t getRxBuffer(modbusHandler_t *modH);
+static int16_t getRxBuffer(modbusHandler_t *modH);
 static uint8_t validateAnswer(modbusHandler_t *modH);
 static void buildException( uint8_t u8exception, modbusHandler_t *modH );
 static uint8_t validateRequest(modbusHandler_t * modH);
@@ -94,7 +96,7 @@ static int8_t process_FC15(modbusHandler_t *modH );
 static int8_t process_FC16(modbusHandler_t *modH);
 static void vTimerCallbackT35(TimerHandle_t *pxTimer);
 static void vTimerCallbackTimeout(TimerHandle_t *pxTimer);
-static int8_t getRxBuffer(modbusHandler_t *modH);
+//static int16_t getRxBuffer(modbusHandler_t *modH);
 static int8_t SendQuery(modbusHandler_t *modH ,  modbus_t telegram);
 
 #if ENABLE_TCP ==1
@@ -110,6 +112,7 @@ static mb_errot_t TCPgetRxBuffer(modbusHandler_t * modH);
 
 
 /* Ring Buffer functions */
+// This function must be called only after disabling USART RX interrupt or inside of the RX interrupt
 void RingAdd(modbusRingBuffer_t *xRingBuffer, uint8_t u8Val)
 {
 
@@ -117,20 +120,24 @@ void RingAdd(modbusRingBuffer_t *xRingBuffer, uint8_t u8Val)
 	xRingBuffer->u8end = (xRingBuffer->u8end + 1) % MAX_BUFFER;
 	if (xRingBuffer->u8available == MAX_BUFFER)
 	{
+		xRingBuffer->overflow = true;
 		xRingBuffer->u8start = (xRingBuffer->u8start + 1) % MAX_BUFFER;
 	}
 	else
 	{
+		xRingBuffer->overflow = false;
 		xRingBuffer->u8available++;
 	}
 
 }
 
+// This function must be called only after disabling USART RX interrupt
 uint8_t RingGetAllBytes(modbusRingBuffer_t *xRingBuffer, uint8_t *buffer)
 {
 	return RingGetNBytes(xRingBuffer, buffer, xRingBuffer->u8available);
 }
 
+// This function must be called only after disabling USART RX interrupt
 uint8_t RingGetNBytes(modbusRingBuffer_t *xRingBuffer, uint8_t *buffer, uint8_t uNumber)
 {
 	uint8_t uCounter;
@@ -143,6 +150,8 @@ uint8_t RingGetNBytes(modbusRingBuffer_t *xRingBuffer, uint8_t *buffer, uint8_t 
 		xRingBuffer->u8start = (xRingBuffer->u8start + 1) % MAX_BUFFER;
 	}
 	xRingBuffer->u8available = xRingBuffer->u8available - uCounter;
+	xRingBuffer->overflow = false;
+	RingClear(xRingBuffer);
 
 	return uCounter;
 }
@@ -157,6 +166,7 @@ void RingClear(modbusRingBuffer_t *xRingBuffer)
 xRingBuffer->u8start = 0;
 xRingBuffer->u8end = 0;
 xRingBuffer->u8available = 0;
+xRingBuffer->overflow = false;
 }
 
 /* End of Ring Buffer functions */
@@ -592,13 +602,16 @@ void StartTaskModbusSlave(void *argument)
 
    if(modH-> xTypeHW == USART_HW)
    {
-      ulTaskNotifyTake(pdTRUE, portMAX_DELAY); /* Block indefinitely until a Modbus Frame arrives */
-	  modH->u8BufferSize = RingCountBytes(&modH->xBufferRX);
-	  if (modH->EN_Port != NULL )
+
+	  ulTaskNotifyTake(pdTRUE, portMAX_DELAY); /* Block indefinitely until a Modbus Frame arrives */
+
+	  if (getRxBuffer(modH) == ERR_BUFF_OVERFLOW)
 	  {
-	     HAL_GPIO_WritePin(modH->EN_Port, modH->EN_Pin, GPIO_PIN_RESET); // is this required?
-	   }
-	   getRxBuffer(modH);
+	      modH->i8lastError = ERR_BUFF_OVERFLOW;
+	   	  modH->u16errCnt++;
+		  continue;
+	  }
+	   //modH->u8BufferSize = RingCountBytes(&modH->xBufferRX);
    }
 
    if (modH->u8BufferSize < 7)
@@ -691,6 +704,7 @@ void StartTaskModbusSlave(void *argument)
    #endif
 
 	 xSemaphoreGive(modH->ModBusSphrHandle); //Release the semaphore
+
 	 continue;
 
    }
@@ -1147,27 +1161,28 @@ uint8_t validateAnswer(modbusHandler_t *modH)
  * @return buffer size if OK, ERR_BUFF_OVERFLOW if u8BufferSize >= MAX_BUFFER
  * @ingroup buffer
  */
-int8_t getRxBuffer(modbusHandler_t *modH)
+int16_t getRxBuffer(modbusHandler_t *modH)
 {
-    bool bBuffOverflow = false;
 
-    if (modH->EN_Port)
+    int16_t i16result;
+
+	HAL_UART_AbortReceive_IT(modH->port); // disable interrupts to avoid race conditions on serial port
+
+	if (modH->xBufferRX.overflow)
     {
-    	HAL_GPIO_WritePin(modH->EN_Port, modH->EN_Pin, GPIO_PIN_RESET);
+       	RingClear(&modH->xBufferRX); // clean up the overflowed buffer
+       	i16result =  ERR_BUFF_OVERFLOW;
     }
+	else
+	{
+		modH->u8BufferSize = RingGetAllBytes(&modH->xBufferRX, modH->u8Buffer);
+		modH->u16InCnt++;
+		i16result = modH->u8BufferSize;
+	}
 
-    modH->u8BufferSize = RingCountBytes(&modH->xBufferRX);
-    RingGetAllBytes(&modH->xBufferRX, modH->u8Buffer);
+    HAL_UART_Receive_IT(modH->port, &modH->dataRX, 1);
 
-    modH->u16InCnt++;
-
-
-    if (bBuffOverflow)
-    {
-    	modH->u16errCnt++;
-        return ERR_BUFF_OVERFLOW;  //using queues this will not happen
-    }
-    return modH->u8BufferSize;
+    return i16result;
 }
 
 
@@ -1378,7 +1393,17 @@ if(modH->xTypeHW != TCP_HW)
 
         // transfer buffer to serial line
         HAL_UART_Transmit_IT(modH->port, modH->u8Buffer,  modH->u8BufferSize);
-        ulTaskNotifyTake(pdTRUE, portMAX_DELAY); //wait notification from TXE interrupt
+        ulTaskNotifyTake(pdTRUE, 250); //wait notification from TXE interrupt
+
+
+#if defined(STM32H745xx) || defined(STM32H743xx)  || defined(STM32F303xE)
+          while((modH->port->Instance->ISR & USART_ISR_TC) ==0 )
+#else
+          while((modH->port->Instance->SR & USART_SR_TC) ==0 )
+#endif
+         {
+ 	        //block the task until the the last byte is send out of the shifting buffer in USART
+         }
 
 
          if (modH->EN_Port != NULL)
@@ -1386,14 +1411,6 @@ if(modH->xTypeHW != TCP_HW)
              // must wait transmission end before changing pin state
              //return RS485 transceiver to receive mode
 
-        	 #if defined(STM32H745xx) || defined(STM32H743xx)  || defined(STM32F303xE)
-        	    while((modH->port->Instance->ISR & USART_ISR_TC) ==0 )
-             #else
-        	    while((modH->port->Instance->SR & USART_SR_TC) ==0 )
-	    	 #endif
-        	 {
-        		taskYIELD();
-        	 }
         	 HAL_GPIO_WritePin(modH->EN_Port, modH->EN_Pin, GPIO_PIN_RESET);
          }
 

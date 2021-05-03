@@ -63,6 +63,7 @@ uint8_t uxBuffer[MAX_BUFFER];
 uint8_t u8start;
 uint8_t u8end;
 uint8_t u8available;
+bool    overflow;
 }modbusRingBuffer_t;
 
 
