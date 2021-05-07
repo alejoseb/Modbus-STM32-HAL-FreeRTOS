@@ -11,17 +11,20 @@ This is a port of the Modbus library for Arduino: https://github.com/smarmengol/
 
 Video demo for STM32F4-dicovery board and TouchGFX: https://youtu.be/XDCQvu0LirY
 
+`NEW` port for the [Raspberry PI Pico](https://github.com/alejoseb/Modbus-PI-Pico-FreeRTOS).
+
 ## Translations supported by the community:
 Traditional Chinese: [繁體中文](TraditionalChineseREADME.md) 
 
 ## Characteristics:
-- Portable to any STM32 MCU supported by ST Cube HAL.
+- Directly portable to any STM32 MCU supported by ST Cube HAL.
+- Portable to other Microcontrollers, like the [Raspberry PI Pico](https://github.com/alejoseb/Modbus-PI-Pico-FreeRTOS), requiring little effort.
 - Multithread-safe implementation based on FreeRTOS. 
 - Multiple instances of Modbus (Master and/or Slave) can run concurrently in the same MCU,
   only limited by the number of available UART/USART of the MCU.
 - RS232 and RS485 compatible.
-- USB-CDC support 
-- `NEW TCP master and slave support examples for F429 and H743 MCUs.`
+- USB-CDC RTU master and Slave support for F103 Bluepill board. 
+- TCP master and slave support with examples for F429 and H743 MCUs
 
 
 
@@ -93,6 +96,6 @@ Windows: https://sourceforge.net/projects/modrssim2/
 ## TODOs:
 - Implement wrapper functions for Master function codes. Currently, telegrams are defined manually. 
 - Improve function documentation
-- ~~Improve the queue for data reception; the current method is too heavy it should be replaced with a simple buffer, a stream, or another FreeRTOS primitive.~~ Solved Queue repalced by a Ring Buffer (03/19/2021)
+- ~~Improve the queue for data reception; the current method is too heavy it should be replaced with a simple buffer, a stream, or another FreeRTOS primitive.~~ Solved Queue replaced by a Ring Buffer (03/19/2021)
 - ~~Test with Rs485 transceivers (implemented but not tested)~~ Verified with MAX485 transceivers (01/03/2021)
 - ~~MODBUS TCP implementation~~ (28/04/2021)
