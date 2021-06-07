@@ -107,7 +107,6 @@ typedef enum ERR_LIST
 
 enum
 {
-    //NO_REPLY = 255,
     EXC_FUNC_CODE = 1,
     EXC_ADDR_RANGE = 2,
     EXC_REGS_QUANT = 3,

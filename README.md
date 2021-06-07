@@ -78,7 +78,7 @@ To use these examples, you need to activate TCP in your ModbusConfig.h file.
 - Update the include paths in the project's properties to include the `Inc` folder of MODBUS-LIB folder
 - Create a ModbusConfig.h using the ModbusConfigTemplate.h and add it to your project in your include path
 - Instantiate a new global modbusHandler_t and follow the examples provided in the repository 
-- `Note:` If the USART interrupts service for other purposes you have to modify the UARTCalback.c file accordingly
+- `Note:` If your project uses the USART interrupt service for other purposes you have to modify the UARTCallback.c file accordingly
 
 
 ## Recommended Modbus Master and Slave testing tools for Linux and Windows
