@@ -171,7 +171,6 @@ typedef struct
 	uint16_t *u16regs;
 	uint16_t u16InCnt, u16OutCnt, u16errCnt; //keep statistics of Modbus traffic
 	uint16_t u16timeOut;
-	uint32_t u32time, u32timeOut;
 	uint16_t u16regsize;
 	uint8_t dataRX;
 	int8_t i8state;
