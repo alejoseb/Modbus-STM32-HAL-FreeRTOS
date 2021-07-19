@@ -12,20 +12,22 @@ This is a port of the Modbus library for Arduino: https://github.com/smarmengol/
 Video demo for STM32F4-dicovery board and TouchGFX: https://youtu.be/XDCQvu0LirY
 
 `NEW` port for the [Raspberry PI Pico](https://github.com/alejoseb/Modbus-PI-Pico-FreeRTOS).
+`NEW` DMA suppport for TX and RX USART Modbus RTU for higher baud rates.
+
 
 ## Translations supported by the community:
 Traditional Chinese: [繁體中文](TraditionalChineseREADME.md) 
 
 ## Characteristics:
-- Directly portable to any STM32 MCU supported by ST Cube HAL.
-- Portable to other Microcontrollers, like the [Raspberry PI Pico](https://github.com/alejoseb/Modbus-PI-Pico-FreeRTOS), requiring little effort.
+- Portable to any STM32 MCU supported by ST Cube HAL.
+- Portable to other Microcontrollers, like the [Raspberry PI Pico](https://github.com/alejoseb/Modbus-PI-Pico-FreeRTOS), requiring little engineering effort.
 - Multithread-safe implementation based on FreeRTOS. 
 - Multiple instances of Modbus (Master and/or Slave) can run concurrently in the same MCU,
   only limited by the number of available UART/USART of the MCU.
 - RS232 and RS485 compatible.
+- USART DMA support for high baudrates with idle-line detection.
 - USB-CDC RTU master and Slave support for F103 Bluepill board. 
 - TCP master and slave support with examples for F429 and H743 MCUs
-
 
 
 ## File structure
@@ -33,20 +35,22 @@ Traditional Chinese: [繁體中文](TraditionalChineseREADME.md)
 ├── LICENSE
 ├── README.md
 ├── Examples
-    ├── ModbusBluepill --> STM32F103C8 USART Slave example
-    ├── ModbusBluepillUSB --> STM32F103C8 USART + USB-CDC Master and Slave example
-    ├── ModbusF103 --> NUCLEO64-F103RB Modbus Master and Slave example
-    ├── ModbusF429 --> NUCLEO144-F429ZI Modbus Slave example
-    ├── ModbusF429TCP --> NUCLEO144-F429ZI Modbus TCP example
-    ├── ModbusH743 --> NUCLEO144-H743ZI Modbus Slave example
-    ├── ModbusH743TCP --> NUCLEO144-H743ZI Modbus TCP example
-    ├── ModbusF303 --> NUCLEO64-F303RE Modbus Slave example
-    ├── ModbusSTM32F4-discovery --> STM32F4-discovery TouchGFX + Modbus Master example
+    ├── ModbusBluepill --> STM32F103C8 USART Slave
+    ├── ModbusBluepillUSB --> STM32F103C8 USART + USB-CDC Master and Slave 
+    ├── ModbusF103 --> NUCLEO-F103RB Modbus Master and Slave
+    ├── ModbusF429 --> NUCLEO-F429ZI Modbus Slave 
+    ├── ModbusF429TCP --> NUCLEO-F429ZI Modbus TCP
+    ├── ModbusF429DMA --> NUCLEO-F429ZI Modbus RTU DMA master and slave 
+    ├── ModbusL152DMA --> NUCLEO-L152RE Modbus RTU DMA slave
+    ├── ModbusH743 --> NUCLEO-H743ZI Modbus Slave
+    ├── ModbusH743TCP --> NUCLEO-H743ZI Modbus TCP
+    ├── ModbusF303 --> NUCLEO-F303RE Modbus Slavee
+    ├── ModbusSTM32F4-discovery --> STM32F4-discovery TouchGFX + Modbus Master
 ├── MODBUS-LIB --> Library Folder
     ├── Inc
     │   └── Modbus.h 
     ├── Config
-    │   └── ModbusConfigTemplate.h 
+    │   └── ModbusConfigTemplate.h --> Configuration Template
     └── Src
         ├── Modbus.c 
         └── UARTCallback.c
@@ -60,18 +64,22 @@ Examples provided for STM32CubeIDE Version: 1.3.0 https://www.st.com/en/developm
 - Compile and start your debugging session!
 - If you need to adjust the Baud rate or any other parameter use the Cube-MX assistant (recommended). If you change the USART port you need to enable the interrupts for the selected USART. Check UARTCallback.c for more details.
 
-### NOTE 1:
-The USB-CDC example supports only the Bluepill development board. It has not been validated with other development boards.
+### NOTES :
+- The standard interrupt mode for Modbus RTU USART is suitable for 115200 bps or lower baud rates. 
+For Higher baud rates---tested up to 2 Mbps---it is recommended to use the DMA mode. Check the corresponding examples. It will require 
+extra configurations for the DMA channels in the Cube HAL.
+
+- The USB-CDC example supports only the Bluepill development board. It has not been validated with other development boards.
 To use this example, you need to activate USB-CDC in your ModbusConfig.h file.
 
-### NOTE 2:
-The TCP examples have been validated with NUCLEO F429ZI and H743ZI. 
+- The TCP examples have been validated with NUCLEO F429ZI and H743ZI. 
 To use these examples, you need to activate TCP in your ModbusConfig.h file.
 
 
 ## How to port to your own MCU
 - Create a new project in STM32Cube IDE
-- Configure a USART and activate the global interrupt of it
+- Configure a USART and activate the global interrupt
+- If you are using the DMA mode for USART, configure the DMA requests for RX and TX
 - Configure the `Preemption priority` of USART interrupt to a lower priority (5 or a higher number for a standard configuration) than your FreeRTOS scheduler. This parameter is changed in the NVIC configuration pane.
 - Import the Modbus library folder (MODBUS-LIB) using drag-and-drop from your host operating system to your STM32Cube IDE project
 - When asked, choose link folders and files

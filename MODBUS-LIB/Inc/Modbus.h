@@ -24,6 +24,7 @@ typedef enum
     USART_HW = 1,
     USB_CDC_HW = 2,
     TCP_HW = 3,
+	USART_HW_DMA = 4,
 }mb_hardware_t ;
 
 
@@ -88,7 +89,8 @@ typedef enum MESSAGE
 typedef enum COM_STATES
 {
     COM_IDLE                     = 0,
-    COM_WAITING                  = 1
+    COM_WAITING                  = 1,
+
 }mb_com_state_t;
 
 typedef enum ERR_LIST

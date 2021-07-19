@@ -20,10 +20,10 @@
 //#define ENABLE_TCP 1
 
 /* Uncomment the following line to enable support for Modbus RTU USART DMA mode. Only tested for Nucleo144-F429ZI.  */
-//#define ENABLE_USART_DMA 1
+#define ENABLE_USART_DMA 1
 
 
-#define T35  5              // Timer T35 period (in ticks) for end frame detection.
+#define T35  2              // Timer T35 period (in ticks) for end frame detection.
 #define MAX_BUFFER  128	    // Maximum size for the communication buffer in bytes.
 #define TIMEOUT_MODBUS 1000 // Timeout for master query (in ticks)
 #define MAX_M_HANDLERS 2    //Maximum number of modbus handlers that can work concurrently

@@ -331,7 +331,7 @@ void ModbusInit(modbusHandler_t * modH)
 void ModbusStart(modbusHandler_t * modH)
 {
 
-	if(modH->xTypeHW != USART_HW && modH->xTypeHW != TCP_HW && modH->xTypeHW != USB_CDC_HW)
+	if(modH->xTypeHW != USART_HW && modH->xTypeHW != TCP_HW && modH->xTypeHW != USB_CDC_HW  && modH->xTypeHW != USART_HW_DMA )
 	{
 
 		while(1); //ERROR select the type of hardware
@@ -339,7 +339,7 @@ void ModbusStart(modbusHandler_t * modH)
 
 
 
-	if (modH->xTypeHW == USART_HW )
+	if (modH->xTypeHW == USART_HW || modH->xTypeHW ==  USART_HW_DMA )
 	{
 
 	      if (modH->EN_Port != NULL )
@@ -356,15 +356,49 @@ void ModbusStart(modbusHandler_t * modH)
           //check that port is initialized
           while (HAL_UART_GetState(modH->port) != HAL_UART_STATE_READY)
           {
+
           }
+
+#if ENABLE_USART_DMA ==1
+          if( modH->xTypeHW == USART_HW_DMA )
+          {
+
+
+        	  if(HAL_UARTEx_ReceiveToIdle_DMA(modH->port, modH->xBufferRX.uxBuffer, MAX_BUFFER ) != HAL_OK)
+        	   {
+        	         while(1)
+        	         {
+        	                    	  //error in your initialization code
+        	         }
+        	   }
+        	  __HAL_DMA_DISABLE_IT(modH->port->hdmarx, DMA_IT_HT); // we don't need half-transfer interrupt
+
+          }
+          else{
+
+        	  // Receive data from serial port for Modbus using interrupt
+        	  if(HAL_UART_Receive_IT(modH->port, &modH->dataRX, 1) != HAL_OK)
+        	  {
+        	           while(1)
+        	           {
+        	                       	  //error in your initialization code
+        	           }
+        	  }
+
+          }
+
+
+#else
           // Receive data from serial port for Modbus using interrupt
           if(HAL_UART_Receive_IT(modH->port, &modH->dataRX, 1) != HAL_OK)
           {
-              while(1)
-              {
-            	  //error in your initialization code
-              }
+                while(1)
+                {
+                     	  //error in your initialization code
+                 }
           }
+
+#endif
 
           if(modH->u8id !=0 && modH->uModbusType == MB_MASTER )
           {
@@ -383,7 +417,6 @@ void ModbusStart(modbusHandler_t * modH)
                	  }
 
            }
-
 
 	}
 
@@ -557,6 +590,7 @@ void StartTaskModbusSlave(void *argument)
 {
 
   modbusHandler_t *modH =  (modbusHandler_t *)argument;
+  //uint32_t notification;
 
 #if ENABLE_TCP ==1
   if( modH->xTypeHW == TCP_HW )
@@ -600,10 +634,10 @@ void StartTaskModbusSlave(void *argument)
 #endif
 
 
-   if(modH-> xTypeHW == USART_HW)
+   if(modH->xTypeHW == USART_HW || modH->xTypeHW == USART_HW_DMA)
    {
 
-	  ulTaskNotifyTake(pdTRUE, portMAX_DELAY); /* Block indefinitely until a Modbus Frame arrives */
+	  ulTaskNotifyTake(pdTRUE, portMAX_DELAY); /* Block 2 seconds until a Modbus Frame arrives */
 
 	  if (getRxBuffer(modH) == ERR_BUFF_OVERFLOW)
 	  {
@@ -1166,7 +1200,10 @@ int16_t getRxBuffer(modbusHandler_t *modH)
 
     int16_t i16result;
 
-	HAL_UART_AbortReceive_IT(modH->port); // disable interrupts to avoid race conditions on serial port
+    if(modH->xTypeHW == USART_HW)
+    {
+    	HAL_UART_AbortReceive_IT(modH->port); // disable interrupts to avoid race conditions on serial port
+    }
 
 	if (modH->xBufferRX.overflow)
     {
@@ -1180,7 +1217,10 @@ int16_t getRxBuffer(modbusHandler_t *modH)
 		i16result = modH->u8BufferSize;
 	}
 
-    HAL_UART_Receive_IT(modH->port, &modH->dataRX, 1);
+	if(modH->xTypeHW == USART_HW)
+	{
+		HAL_UART_Receive_IT(modH->port, &modH->dataRX, 1);
+	}
 
     return i16result;
 }
@@ -1399,7 +1439,7 @@ if(modH->xTypeHW != TCP_HW)
 
 
 #if ENABLE_USB_CDC == 1 || ENABLE_TCP == 1
-    if(modH->xTypeHW == USART_HW)
+    if(modH->xTypeHW == USART_HW || modH->xTypeHW == USART_HW_DMA )
     {
 #endif
     	if (modH->EN_Port != NULL)
@@ -1408,8 +1448,23 @@ if(modH->xTypeHW != TCP_HW)
         	HAL_GPIO_WritePin(modH->EN_Port, modH->EN_Pin, GPIO_PIN_SET);
         }
 
-        // transfer buffer to serial line
-        HAL_UART_Transmit_IT(modH->port, modH->u8Buffer,  modH->u8BufferSize);
+#if ENABLE_USART_DMA ==1
+    	if(modH->xTypeHW == USART_HW)
+    	{
+#endif
+    		// transfer buffer to serial line IT
+    		HAL_UART_Transmit_IT(modH->port, modH->u8Buffer,  modH->u8BufferSize);
+
+#if ENABLE_USART_DMA ==1
+    	}
+        else
+        {
+        	// transfer buffer to serial line DMA
+        	HAL_UART_Transmit_DMA(modH->port, modH->u8Buffer, modH->u8BufferSize);
+
+        }
+#endif
+
         ulTaskNotifyTake(pdTRUE, 250); //wait notification from TXE interrupt
 
 
