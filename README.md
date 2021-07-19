@@ -12,6 +12,7 @@ This is a port of the Modbus library for Arduino: https://github.com/smarmengol/
 Video demo for STM32F4-dicovery board and TouchGFX: https://youtu.be/XDCQvu0LirY
 
 `NEW` port for the [Raspberry PI Pico](https://github.com/alejoseb/Modbus-PI-Pico-FreeRTOS).
+
 `NEW` DMA suppport for TX and RX USART Modbus RTU for higher baud rates.
 
 
