@@ -1468,7 +1468,7 @@ if(modH->xTypeHW != TCP_HW)
         ulTaskNotifyTake(pdTRUE, 250); //wait notification from TXE interrupt
 
 
-#if defined(STM32H745xx) || defined(STM32H743xx)  || defined(STM32F303xE)
+#if defined(STM32H745xx) || defined(STM32H743xx)  || defined(STM32F303xE) || defined(STM32L4)
           while((modH->port->Instance->ISR & USART_ISR_TC) ==0 )
 #else
           while((modH->port->Instance->SR & USART_SR_TC) ==0 )
