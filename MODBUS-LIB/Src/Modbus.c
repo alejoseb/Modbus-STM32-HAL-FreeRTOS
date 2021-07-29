@@ -21,6 +21,9 @@
 #include "netif.h"
 #endif
 
+#ifndef ENABLE_USART_DMA
+#define ENABLE_USART_DMA 0
+#endif
 
 #define bitRead(value, bit) (((value) >> (bit)) & 0x01)
 #define bitSet(value, bit) ((value) |= (1UL << (bit)))
@@ -337,6 +340,11 @@ void ModbusStart(modbusHandler_t * modH)
 		while(1); //ERROR select the type of hardware
 	}
 
+	if (modH->xTypeHW == USART_HW_DMA && ENABLE_USART_DMA == 0  )
+	{
+		while(1); //ERROR To use USART_HW_DMA you need to enable it in the ModbusConfig.h file
+	}
+
 
 
 	if (modH->xTypeHW == USART_HW || modH->xTypeHW ==  USART_HW_DMA )
@@ -637,7 +645,7 @@ void StartTaskModbusSlave(void *argument)
    if(modH->xTypeHW == USART_HW || modH->xTypeHW == USART_HW_DMA)
    {
 
-	  ulTaskNotifyTake(pdTRUE, portMAX_DELAY); /* Block 2 seconds until a Modbus Frame arrives */
+	  ulTaskNotifyTake(pdTRUE, portMAX_DELAY); /* Block until a Modbus Frame arrives */
 
 	  if (getRxBuffer(modH) == ERR_BUFF_OVERFLOW)
 	  {
@@ -1466,12 +1474,16 @@ if(modH->xTypeHW != TCP_HW)
 #endif
 
         ulTaskNotifyTake(pdTRUE, 250); //wait notification from TXE interrupt
-
-
-#if defined(STM32H745xx) || defined(STM32H743xx)  || defined(STM32F303xE)
+/*
+* If you are porting the library to a different MCU check the 
+* USART datasheet and add the corresponding family in the following
+* preporcessor conditions
+*/
+#if defined(STM32H7)  || defined(STM32F3) || defined(STM32L4)  
           while((modH->port->Instance->ISR & USART_ISR_TC) ==0 )
 #else
-          while((modH->port->Instance->SR & USART_SR_TC) ==0 )
+          // F429, F103, L152 ...
+	  while((modH->port->Instance->SR & USART_SR_TC) ==0 )
 #endif
          {
  	        //block the task until the the last byte is send out of the shifting buffer in USART

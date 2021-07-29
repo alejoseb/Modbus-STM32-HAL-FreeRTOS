@@ -52,22 +52,22 @@ modbus_t telegram[2];
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
   .name = "defaultTask",
+  .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
-  .stack_size = 128 * 4
 };
 /* Definitions for myTaskMaster */
 osThreadId_t myTaskMasterHandle;
 const osThreadAttr_t myTaskMaster_attributes = {
   .name = "myTaskMaster",
+  .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityLow,
-  .stack_size = 128 * 4
 };
 /* Definitions for myTaskSlave */
 osThreadId_t myTaskSlaveHandle;
 const osThreadAttr_t myTaskSlave_attributes = {
   .name = "myTaskSlave",
+  .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityLow,
-  .stack_size = 128 * 4
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -121,6 +121,10 @@ void MX_FREERTOS_Init(void) {
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
 
+  /* USER CODE BEGIN RTOS_EVENTS */
+  /* add events, ... */
+  /* USER CODE END RTOS_EVENTS */
+
 }
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -171,7 +175,7 @@ void StartTaskMaster(void *argument)
   telegram[1].u16RegAdd = 0x0;
   telegram[1].u16CoilsNo = 1; // number of elements (coils or registers) to read
   telegram[1].u16reg = ModbusDATA; // pointer to a memory array in the Arduino
-
+  int aux;
 
 
   for(;;)
@@ -182,6 +186,7 @@ void StartTaskMaster(void *argument)
 	  {
 		//handle error
 		//  while(1);
+		  aux =1;
 	  }
 	  osDelay(500);
 
@@ -193,6 +198,7 @@ void StartTaskMaster(void *argument)
 	  {
 	  	//handle error
 		//  while(1);
+		  aux =2;
 	  }
 	  osDelay(500);
   }
