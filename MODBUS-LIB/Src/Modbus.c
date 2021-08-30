@@ -192,26 +192,10 @@ const unsigned char fctsupported[] =
 /**
  * @brief
  * Initialization for a Master/Slave.
+ * this function will check the configuration parameters
+ * of the modbus handler
  *
- * For hardware serial through USB/RS232C/RS485 set port to Serial, Serial1,
- * Serial2, or Serial3. (Numbered hardware serial ports are only available on
- * some boards.)
- *
- * For software serial through RS232C/RS485 set port to a SoftwareSerial object
- * that you have already constructed.
- *
- * ModbusRtu needs a pin for flow control only for RS485 mode. Pins 0 and 1
- * cannot be used.
- *
- * First call begin() on your serial port, and then start up ModbusRtu by
- * calling start(). You can choose the line speed and other port parameters
- * by passing the appropriate values to the port's begin() function.
- *
- * @param u8id   node address 0=master, 1..247=slave
- * @param port   serial port used
- * @param EN_Port_v port for txen RS-485
- * @param EN_Pin_v pin for txen RS-485 (NULL means RS232C mode)
- * @ingroup setup
+ * @param modH   modbus handler
  */
 void ModbusInit(modbusHandler_t * modH)
 {
@@ -884,9 +868,10 @@ int8_t SendQuery(modbusHandler_t *modH ,  modbus_t telegram )
 	    break;
 	}
 
+	sendTxBuffer(modH);
+
 	xSemaphoreGive(modH->ModBusSphrHandle);
 
-	sendTxBuffer(modH);
 	modH->i8state = COM_WAITING;
 	modH->i8lastError = 0;
 	return 0;
@@ -1460,6 +1445,8 @@ if(modH->xTypeHW != TCP_HW)
     	if(modH->xTypeHW == USART_HW)
     	{
 #endif
+    		// disable RX IRQ to avoid echo on RS485 transceivers
+    		HAL_UART_AbortReceive_IT(modH->port);
     		// transfer buffer to serial line IT
     		HAL_UART_Transmit_IT(modH->port, modH->u8Buffer,  modH->u8BufferSize);
 
@@ -1467,9 +1454,10 @@ if(modH->xTypeHW != TCP_HW)
     	}
         else
         {
+        	// disable RX DMA
+        	HAL_UART_DMAStop(modH->port);
         	// transfer buffer to serial line DMA
         	HAL_UART_Transmit_DMA(modH->port, modH->u8Buffer, modH->u8BufferSize);
-
         }
 #endif
 
