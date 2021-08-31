@@ -1480,12 +1480,17 @@ if(modH->xTypeHW != TCP_HW)
              // must wait transmission end before changing pin state
              //return RS485 transceiver to receive mode
         	 HAL_GPIO_WritePin(modH->EN_Port, modH->EN_Pin, GPIO_PIN_RESET);
-        	 HAL_UART_Abort(modH->port); // we need to call this to clean up the USART state
+        	 // we need to flush the DR register because it might contain our own TX data
+        	 // this is needed when RX is always enabled on the RS485 transceivers (i.e. RE tied to GND)
+        	 // otherwise a RX IRQ will be triggered immediately after enabling the RX IRQ
+        	 // since at least one character is already in DR.
+        	 __HAL_UART_FLUSH_DRREGISTER(modH->port);
         	 if(modH->xTypeHW == USART_HW)
         	 {
         		 //enable RX IRQ again
         		 HAL_UART_Receive_IT(modH->port, &modH->dataRX, 1);
         	 }
+
 			 #if ENABLE_USART_DMA ==1
         	 else
         	 {
