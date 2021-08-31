@@ -1435,18 +1435,17 @@ if(modH->xTypeHW != TCP_HW)
     if(modH->xTypeHW == USART_HW || modH->xTypeHW == USART_HW_DMA )
     {
 #endif
+
     	if (modH->EN_Port != NULL)
         {
-            // set RS485 transceiver to transmit mode
-        	HAL_GPIO_WritePin(modH->EN_Port, modH->EN_Pin, GPIO_PIN_SET);
+    		HAL_UART_Abort(modH->port);
+    		HAL_GPIO_WritePin(modH->EN_Port, modH->EN_Pin, GPIO_PIN_SET);
         }
 
 #if ENABLE_USART_DMA ==1
     	if(modH->xTypeHW == USART_HW)
     	{
 #endif
-    		// disable RX IRQ to avoid echo on RS485 transceivers
-    		HAL_UART_AbortReceive_IT(modH->port);
     		// transfer buffer to serial line IT
     		HAL_UART_Transmit_IT(modH->port, modH->u8Buffer,  modH->u8BufferSize);
 
@@ -1454,9 +1453,7 @@ if(modH->xTypeHW != TCP_HW)
     	}
         else
         {
-        	// disable RX DMA
-        	HAL_UART_DMAStop(modH->port);
-        	// transfer buffer to serial line DMA
+        	//transfer buffer to serial line DMA
         	HAL_UART_Transmit_DMA(modH->port, modH->u8Buffer, modH->u8BufferSize);
         }
 #endif
@@ -1482,15 +1479,28 @@ if(modH->xTypeHW != TCP_HW)
          {
              // must wait transmission end before changing pin state
              //return RS485 transceiver to receive mode
-
         	 HAL_GPIO_WritePin(modH->EN_Port, modH->EN_Pin, GPIO_PIN_RESET);
-         }
+        	 HAL_UART_Abort(modH->port); // we need to call this to clean up the USART state
+        	 if(modH->xTypeHW == USART_HW)
+        	 {
+        		 //enable RX IRQ again
+        		 HAL_UART_Receive_IT(modH->port, &modH->dataRX, 1);
+        	 }
+			 #if ENABLE_USART_DMA ==1
+        	 else
+        	 {
+        		 //enable RX DMA again
+        		 if(HAL_UARTEx_ReceiveToIdle_DMA(modH->port, modH->xBufferRX.uxBuffer, MAX_BUFFER ) != HAL_OK)
+        		 __HAL_DMA_DISABLE_IT(modH->port->hdmarx, DMA_IT_HT); // we don't need half-transfer interrupt
+        	 }
+			 #endif
 
+         }
 
          // set timeout for master query
          if(modH->uModbusType == MB_MASTER )
          {
- 	    	xTimerReset(modH->xTimerTimeout,0);
+        	 xTimerReset(modH->xTimerTimeout,0);
          }
 #if ENABLE_USB_CDC == 1 || ENABLE_TCP == 1
     }
@@ -1546,6 +1556,7 @@ if(modH->xTypeHW != TCP_HW)
      modH->u8BufferSize = 0;
      // increase message counter
      modH->u16OutCnt++;
+
 
 }
 

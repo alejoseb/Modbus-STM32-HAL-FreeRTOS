@@ -28,27 +28,13 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 	int i;
 	for (i = 0; i < numberHandlers; i++ )
 	{
-	   	if (mHandlers[i]->port == huart  &&  mHandlers[i]->xTypeHW == USART_HW)
+	   	if (mHandlers[i]->port == huart  )
 	   	{
-	   		// enable RX IRQ again after TX
-	   		HAL_UART_Receive_IT(mHandlers[i]->port, &mHandlers[i]->dataRX, 1);
 	   		// notify the end of TX
 	   		xTaskNotifyFromISR(mHandlers[i]->myTaskModbusAHandle, 0, eNoAction, &xHigherPriorityTaskWoken);
 	   		break;
 	   	}
-#if  ENABLE_USART_DMA == 1
-    	else if (mHandlers[i]->port == huart && mHandlers[i]->xTypeHW == USART_HW_DMA)
-		{
-    		 // enable RX DMA after TX
-		     while(HAL_UARTEx_ReceiveToIdle_DMA(mHandlers[i]->port, mHandlers[i]->xBufferRX.uxBuffer, MAX_BUFFER) != HAL_OK)
-			 {
-			   	HAL_UART_DMAStop(mHandlers[i]->port);
-			 }
-			 __HAL_DMA_DISABLE_IT(mHandlers[i]->port->hdmarx, DMA_IT_HT); // we don't need half-transfer interrupt
-			 xTaskNotifyFromISR(mHandlers[i]->myTaskModbusAHandle, 0, eNoAction, &xHigherPriorityTaskWoken);
-			break;
-    	}
-#endif
+
 	}
 	portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 
