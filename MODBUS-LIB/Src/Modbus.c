@@ -1438,7 +1438,8 @@ if(modH->xTypeHW != TCP_HW)
 
     	if (modH->EN_Port != NULL)
         {
-    		HAL_UART_Abort(modH->port);
+    		//enable transmitter, disable receiver to avoid echo on RS485 transceivers
+    		HAL_HalfDuplex_EnableTransmitter(modH->port);
     		HAL_GPIO_WritePin(modH->EN_Port, modH->EN_Pin, GPIO_PIN_SET);
         }
 
@@ -1455,6 +1456,7 @@ if(modH->xTypeHW != TCP_HW)
         {
         	//transfer buffer to serial line DMA
         	HAL_UART_Transmit_DMA(modH->port, modH->u8Buffer, modH->u8BufferSize);
+
         }
 #endif
 
@@ -1477,28 +1479,11 @@ if(modH->xTypeHW != TCP_HW)
 
          if (modH->EN_Port != NULL)
          {
-             // must wait transmission end before changing pin state
+
              //return RS485 transceiver to receive mode
         	 HAL_GPIO_WritePin(modH->EN_Port, modH->EN_Pin, GPIO_PIN_RESET);
-        	 // we need to flush the DR register because it might contain our own TX data
-        	 // this is needed when RX is always enabled on the RS485 transceivers (i.e. RE tied to GND)
-        	 // otherwise a RX IRQ will be triggered immediately after enabling the RX IRQ
-        	 // since at least one character is already in DR.
-        	 __HAL_UART_FLUSH_DRREGISTER(modH->port);
-        	 if(modH->xTypeHW == USART_HW)
-        	 {
-        		 //enable RX IRQ again
-        		 HAL_UART_Receive_IT(modH->port, &modH->dataRX, 1);
-        	 }
-
-			 #if ENABLE_USART_DMA ==1
-        	 else
-        	 {
-        		 //enable RX DMA again
-        		 if(HAL_UARTEx_ReceiveToIdle_DMA(modH->port, modH->xBufferRX.uxBuffer, MAX_BUFFER ) != HAL_OK)
-        		 __HAL_DMA_DISABLE_IT(modH->port->hdmarx, DMA_IT_HT); // we don't need half-transfer interrupt
-        	 }
-			 #endif
+        	 //enable receiver, disable transmitter
+        	 HAL_HalfDuplex_EnableReceiver(modH->port);
 
          }
 
