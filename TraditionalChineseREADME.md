@@ -6,6 +6,7 @@
 * Arduino演示影片 : https://github.com/smarmengol/Modbus-Master-Slave-for-Arduino
 * STM32F4-dicovery 板子 與 TouchGFX 演示 : https://youtu.be/XDCQvu0LirY
 * `NEW` 端口對應樹梅派Pico影片: [Raspberry PI Pico](https://github.com/alejoseb/Modbus-PI-Pico-FreeRTOS).
+* `NEW` DMA支持TX以及RX USART Modbus RTU 支持更高的波特率!
 ## 特點
 * 可移植到ST Cube HAL支持的任何STM32 MCU。
 * 基於FreeRTOS的多線程安全實現。 
@@ -13,25 +14,30 @@
 * 支援RS232與RS485(注意! 485需要接RE DE發送/接收 控制腳位)
 * 新! USB-CDC 支援
 
+## Translations supported by the community:
+English : [English](README.md)
+
 ## 目錄
 ```
 ├── LICENSE
 ├── README.md
 ├── Examples
-    ├── ModbusBluepill --> STM32F103C8 USART Slave example
-    ├── ModbusBluepillUSB --> STM32F103C8 USART + USB-CDC Master and Slave example
-    ├── ModbusF103 --> NUCLEO64-F103RB Modbus Master and Slave example
-    ├── ModbusF429 --> NUCLEO144-F429ZI Modbus Slave example
-    ├── ModbusF429TCP --> NUCLEO144-F429ZI Modbus TCP example
-    ├── ModbusH743 --> NUCLEO144-H743ZI Modbus Slave example
-    ├── ModbusH743TCP --> NUCLEO144-H743ZI Modbus TCP example
-    ├── ModbusF303 --> NUCLEO64-F303RE Modbus Slave example
-    ├── ModbusSTM32F4-discovery --> STM32F4-discovery TouchGFX + Modbus Master example
+    ├── ModbusBluepill --> STM32F103C8 USART Slave
+    ├── ModbusBluepillUSB --> STM32F103C8 USART + USB-CDC Master and Slave 
+    ├── ModbusF103 --> NUCLEO-F103RB Modbus Master and Slave
+    ├── ModbusF429 --> NUCLEO-F429ZI Modbus Slave 
+    ├── ModbusF429TCP --> NUCLEO-F429ZI Modbus TCP
+    ├── ModbusF429DMA --> NUCLEO-F429ZI Modbus RTU DMA master and slave 
+    ├── ModbusL152DMA --> NUCLEO-L152RE Modbus RTU DMA slave
+    ├── ModbusH743 --> NUCLEO-H743ZI Modbus Slave
+    ├── ModbusH743TCP --> NUCLEO-H743ZI Modbus TCP
+    ├── ModbusF303 --> NUCLEO-F303RE Modbus Slavee
+    ├── ModbusSTM32F4-discovery --> STM32F4-discovery TouchGFX + Modbus Master
 ├── MODBUS-LIB --> Library Folder
     ├── Inc
     │   └── Modbus.h 
     ├── Config
-    │   └── ModbusConfigTemplate.h 
+    │   └── ModbusConfigTemplate.h --> Configuration Template
     └── Src
         ├── Modbus.c 
         └── UARTCallback.c
@@ -79,9 +85,9 @@ Linux: https://sourceforge.net/projects/pymodslave/
 Windows: https://sourceforge.net/projects/modrssim2/
 * * *
 # 目標
-* 為主功能代碼實現包裝器功能。 當前，telegrams是手動定義的。 
+* 為主功能代碼實現包裝器功能。 當前telegrams是手動定義的。 
 * 改進功能文檔 
 * ~~改善數據接收隊列； 當前方法過於繁重，應將其替換為簡單的緩衝區，流或其他FreeRTOS原語。 已解決的隊列由環形緩衝區重新填充 [Ring Wiki](https://zh.wikipedia.org/wiki/%E7%92%B0%E5%BD%A2%E7%B7%A9%E8%A1%9D%E5%8D%80)（03/19/2021)~~
 * ~~使用Rs485收發器進行測試（已實現，但未經測試）已通過MAX485收發器進行了驗證（01/03/2021)~~
-* ~~Modbus TCP功能實現~~
+* ~~Modbus TCP功能實現~~ (28/04/2021)
 * * * 
