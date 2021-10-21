@@ -488,43 +488,71 @@ bool TCPwaitConnData(modbusHandler_t *modH)
   uint16_t uLength;
   bool xTCPvalid;
   xTCPvalid = false;
+  tcpclients_t *clientconn;
+
+  //select the next connection slot to work with using round-robin
+  modH->newconnIndex++;
+  if (modH->newconnIndex>NUMBERTCPCONN)
+  {
+	  modH->newconnIndex = 0;
+  }
+  clientconn = &modH->newconns[modH->newconnIndex];
 
 
-  if (modH->newconn == NULL){
-     while(1) //wait for incoming connection
-     {
-         /* accept any incoming connection */
-	     accept_err = netconn_accept(modH->conn, &modH->newconn);
-	     if(accept_err == ERR_OK)
-	     {
-            break; //break the loop and continue with validations of TCP frame
-         }
-
+  //NULL means there is free connection slot, so we can accept an incoming client connection
+  if (clientconn->conn == NULL){
+      /* accept any incoming connection */
+	  accept_err = netconn_accept(modH->conn, &clientconn->conn);
+	  if(accept_err != ERR_OK)
+	  {
+		  // not valid incoming connection at this time
+		  netconn_close(clientconn->conn);
+		  netconn_delete(clientconn->conn);
+		  clientconn->conn = NULL;
+		  return xTCPvalid;
       }
+	  else
+	  {
+		  clientconn->aging=0;
+	  }
+
   }
 
-  netconn_set_recvtimeout(modH->newconn, modH->u16timeOut );
-  recv_err = netconn_recv(modH->newconn, &inbuf);
+  netconn_set_recvtimeout(clientconn->conn , TCPTIMEOUT);
+  recv_err = netconn_recv(clientconn->conn, &inbuf);
 
   if (recv_err == ERR_CLSD) //the connection was closed
   {
-	  netconn_close(modH->newconn);
-	  netconn_delete(modH->newconn);
-	  modH->newconn=NULL;
+	  //Close and clean the connection
+	  netconn_close(clientconn->conn);
+	  netconn_delete(clientconn->conn);
+	  clientconn->conn = NULL;
+	  clientconn->aging = 0;
 	  return xTCPvalid;
 
   }
 
   if (recv_err == ERR_TIMEOUT) //No new data
    {
- 	  //just continue waiting
+ 	  //continue the aging process
+	  modH->newconns[modH->newconnIndex].aging++;
+
+	  // if the connection is old enough and inactive close and clean it up
+	  if (modH->newconns[modH->newconnIndex].aging >= TCPAGINGCYCLES)
+	  {
+		  netconn_close(clientconn->conn);
+		  netconn_delete(clientconn->conn);
+		  clientconn->conn = NULL;
+		  clientconn->aging = 0;
+	  }
+
  	  return xTCPvalid;
 
    }
 
   if (recv_err == ERR_OK)
   {
-      if (netconn_err(modH->newconn) == ERR_OK)
+      if (netconn_err(clientconn->conn) == ERR_OK)
       {
     	  /* Read the data from the port, blocking if nothing yet there.
     	  We assume the request (the part we care about) is in one netbuf */
@@ -542,13 +570,14 @@ bool TCPwaitConnData(modbusHandler_t *modH)
 			          }
 			          modH->u16TransactionID = (buf[0]<<8 & 0xff00) | buf[1];
 			          modH->u8BufferSize = uLength + 2; //add 2 dummy bytes for CRC
-			          xTCPvalid = true;
+			          xTCPvalid = true; // we have data for the modbus slave
 
 			      }
 			  }
 
 		  }
 		  netbuf_delete(inbuf); // delete the buffer always
+		  clientconn->aging = 0; //reset the aging counter
 	   }
    }
 
@@ -574,6 +603,7 @@ void  TCPinitserver(modbusHandler_t *modH)
 		     {
 		    	 /* Put the connection into LISTEN state */
 		    	 netconn_listen(modH->conn);
+		    	 netconn_set_recvtimeout(modH->conn, 1); // this is necessary to make it non blocking
 		     }
 		     else{
 		    		  while(1)
@@ -662,41 +692,24 @@ void StartTaskModbusSlave(void *argument)
       modH->i8lastError = ERR_BAD_SIZE;
       modH->u16errCnt++;
 
-  #if ENABLE_TCP ==1
-	  if(modH-> xTypeHW == TCP_HW)
-	  {
-		  if (netconn_err(modH->newconn)) // if there is an error in the connection close and delete it
-		  {
-		 	  netconn_close(modH->newconn);
-		 	  netconn_delete(modH->newconn);
-		  }
-		  else
-		  {
-		 	  //just continue with the open connection
-			  //netconn_delete(modH->newconn);
-		  }
-
-	  }
-  #endif
 	  continue;
     }
 
-		// check slave id
-#if ENABLE_TCP ==0
-    if ( modH->u8Buffer[ID] !=  modH->u8id)   //for Modbus TCP this is not validated, user should modify accordingly if needed
+
+   // check slave id
+    if ( modH->u8Buffer[ID] !=  modH->u8id)
 	{
 
-		if(modH-> xTypeHW == TCP_HW)
-		{
-		    netconn_close(modH->newconn);
-			netconn_delete(modH->newconn);
-			modH->newconn = NULL;
-
-		}
-
-		continue;
-	 }
+#if ENABLE_TCP == 0
+    	continue; // continue this is not for us
+#else
+    	if(modH->xTypeHW != TCP_HW)
+    	{
+    		continue; //for Modbus TCP this is not validated, user should modify accordingly if needed
+    	}
 #endif
+	 }
+
 	  // validate message: CRC, FCT, address and size
     uint8_t u8exception = validateRequest(modH);
 	if (u8exception > 0)
@@ -709,15 +722,6 @@ void StartTaskModbusSlave(void *argument)
 		modH->i8lastError = u8exception;
 		//return u8exception
 
-        #if ENABLE_TCP ==1
-		if(modH-> xTypeHW == TCP_HW)
-		{
-		    netconn_close(modH->newconn);
-		  	netconn_delete(modH->newconn);
-		  	modH->newconn = NULL;
-
-		}
-        #endif
 		continue;
 	 }
 
@@ -751,22 +755,6 @@ void StartTaskModbusSlave(void *argument)
 				break;
 	 }
 
-   #if ENABLE_TCP ==1
-	 if(modH-> xTypeHW == TCP_HW)
-	 {
-		 if (netconn_err(modH->newconn)) // if there is an error in the connection close and delete it
-		 {
-			  netconn_close(modH->newconn);
-			  netconn_delete(modH->newconn);
-			  modH->newconn = NULL;
-		 }
-		 else
-		 {
-			 //netconn_delete(modH->newconn);		  //just continue with the open connection
-		 }
-
-	 }
-   #endif
 
 	 xSemaphoreGive(modH->ModBusSphrHandle); //Release the semaphore
 
@@ -922,7 +910,11 @@ int8_t SendQuery(modbusHandler_t *modH ,  modbus_t telegram )
 
 static mb_errot_t TCPconnectserver(modbusHandler_t * modH, uint32_t address, uint16_t port)
 {
-	 err_t err;
+
+	 /*
+	err_t err;
+
+
 
 	 modH->newconn = netconn_new(NETCONN_TCP);
 	 if (modH->newconn == NULL)
@@ -941,7 +933,7 @@ static mb_errot_t TCPconnectserver(modbusHandler_t * modH, uint32_t address, uin
 	       netconn_delete(modH->newconn);
 	       return ERR_TIME_OUT;
 	  }
-
+*/
 	  return ERR_OK;
 }
 
@@ -955,14 +947,18 @@ static mb_errot_t TCPgetRxBuffer(modbusHandler_t * modH)
 	uint16_t buflen;
 	uint16_t uLength;
 
-	netconn_set_recvtimeout(modH->newconn, modH->u16timeOut );
-	err = netconn_recv(modH->newconn, &inbuf);
+	 tcpclients_t *clientconn;
+	 //select the current connection slot to work with
+     clientconn = &modH->newconns[modH->newconnIndex];
+
+	netconn_set_recvtimeout(clientconn->conn, TCPTIMEOUT);
+	err = netconn_recv(clientconn->conn, &inbuf);
 
 	uLength = 0;
 
     if (err == ERR_OK)
     {
-    	err = netconn_err(modH->newconn) ;
+    	err = netconn_err(clientconn->conn) ;
     	if (err == ERR_OK)
     	{
     		/* Read the data from the port, blocking if nothing yet there.
@@ -991,8 +987,8 @@ static mb_errot_t TCPgetRxBuffer(modbusHandler_t * modH)
     	}
     }
 
-    netconn_close(modH->newconn);
-	netconn_delete(modH->newconn);
+    //netconn_close(modH->newconn);
+	//netconn_delete(modH->newconn);
 	return err;
 }
 
@@ -1503,7 +1499,7 @@ if(modH->xTypeHW != TCP_HW)
 /*
 * If you are porting the library to a different MCU check the 
 * USART datasheet and add the corresponding family in the following
-* preporcessor conditions
+* preprocessor conditions
 */
 #if defined(STM32H7)  || defined(STM32F3) || defined(STM32L4)  
           while((modH->port->Instance->ISR & USART_ISR_TC) ==0 )
@@ -1557,7 +1553,7 @@ if(modH->xTypeHW != TCP_HW)
     	  size_t uBytesWritten;
 
 
-    	  u8MBAPheader[0] = highByte(modH->u16TransactionID);
+    	  u8MBAPheader[0] = highByte(modH->u16TransactionID); // this might need improvement the transaction ID could be validated
     	  u8MBAPheader[1] = lowByte(modH->u16TransactionID);
     	  u8MBAPheader[2] = 0; //protocol ID
     	  u8MBAPheader[3] = 0; //protocol ID
@@ -1570,8 +1566,8 @@ if(modH->xTypeHW != TCP_HW)
     	  xNetVectors[1].len = modH->u8BufferSize;
     	  xNetVectors[1].ptr = (void *) modH->u8Buffer;
 
-    	  netconn_set_sendtimeout(modH->newconn, modH->u16timeOut);
-    	  netconn_write_vectors_partly(modH->newconn, xNetVectors, 2, NETCONN_COPY, &uBytesWritten);
+    	  netconn_set_sendtimeout(modH->newconns[modH->newconnIndex].conn, modH->u16timeOut);
+    	  netconn_write_vectors_partly(modH->newconns[modH->newconnIndex].conn, xNetVectors, 2, NETCONN_COPY, &uBytesWritten);
     	  if(modH->uModbusType == MB_MASTER )
     	  {
     	    xTimerReset(modH->xTimerTimeout,0);

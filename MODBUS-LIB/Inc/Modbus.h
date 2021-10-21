@@ -150,6 +150,15 @@ typedef struct
 modbus_t;
 
 
+#if ENABLE_TCP == 1
+typedef struct
+{
+	struct netconn *conn;
+	uint32_t aging;
+}
+tcpclients_t;
+
+#endif
 
 
 /**
@@ -196,11 +205,14 @@ typedef struct
 	mb_hardware_t xTypeHW;
 
 #if ENABLE_TCP == 1
-	uint16_t uTcpPort;
-	struct netconn *newconn;
+
+	tcpclients_t newconns[NUMBERTCPCONN];
 	struct netconn *conn;
-	uint16_t u16TransactionID;
 	uint32_t xIpAddress;
+	uint16_t u16TransactionID;
+	uint16_t uTcpPort;
+	uint8_t newconnIndex;
+
 #endif
 
 }

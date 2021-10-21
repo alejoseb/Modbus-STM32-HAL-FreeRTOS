@@ -11,9 +11,9 @@ This is a port of the Modbus library for Arduino: https://github.com/smarmengol/
 
 Video demo for STM32F4-dicovery board and TouchGFX: https://youtu.be/XDCQvu0LirY
 
-`NEW` port for the [Raspberry PI Pico](https://github.com/alejoseb/Modbus-PI-Pico-FreeRTOS).
-
-`NEW` DMA suppport for TX and RX USART Modbus RTU for higher baud rates.
+`NEW` Script examples to test the library based on Pymodbus
+`NEW` TCP slave multi-client with configurable auto-aging algorithm for management of TCP connections
+`Note` TCP master is not functional in this branch with the new TCP session management, for a working TCP master check the master branch.
 
 
 ## Translations supported by the community:
@@ -28,7 +28,8 @@ Traditional Chinese: [繁體中文](TraditionalChineseREADME.md)
 - RS232 and RS485 compatible.
 - USART DMA support for high baudrates with idle-line detection.
 - USB-CDC RTU master and Slave support for F103 Bluepill board. 
-- TCP master and slave support with examples for F429 and H743 MCUs
+- TCP master (work in progress) and slave support with examples for F429 and H743 MCUs
+
 
 
 ## File structure
@@ -103,6 +104,7 @@ Linux: https://sourceforge.net/projects/pymodslave/
 Windows: https://sourceforge.net/projects/modrssim2/
 
 ## TODOs:
+- MODBUS TCP implementation improvement to support multiple clients and TCP session management
 - Implement wrapper functions for Master function codes. Currently, telegrams are defined manually. 
 - Improve function documentation
 - ~~Improve the queue for data reception; the current method is too heavy it should be replaced with a simple buffer, a stream, or another FreeRTOS primitive.~~ Solved Queue replaced by a Ring Buffer (03/19/2021)

@@ -148,7 +148,7 @@ void StartTask02(void *argument)
 {
   /* USER CODE BEGIN StartTask02 */
 	modbus_t telegram;
-	uint32_t u32NotificationValue;
+	//uint32_t u32NotificationValue;
 
 	telegram.u8id = 1; // slave address
 	telegram.u8fct = MB_FC_WRITE_MULTIPLE_REGISTERS; // function code (this one is registers read)

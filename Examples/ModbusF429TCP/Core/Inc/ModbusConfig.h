@@ -18,6 +18,12 @@
 
 /* Uncomment the following line to enable support for Modbus TCP. Only tested for Nucleo144-F429ZI. */
 #define ENABLE_TCP 1
+#define NUMBERTCPCONN   4   // Maximum number of simultaneous client connections, it should be equal or less than LWIP configuration
+#define TCPAGINGCYCLES	1000 // Number of times the master will check for a incoming request before closing the connection for inactivity
+#define TCPTIMEOUT 10        // the time the slave will wait for an incoming data packet
+/* Note: the total aging time for a connection is approximately NUMBERTCPCONN*TCPAGINGCYCLES*TCPTIMEOUTMASTER ticks
+ * for the values selected in this example it is approximately 40 seconds
+*/
 
 
 #define T35  5              // Timer T35 period (in ticks) for end frame detection.
