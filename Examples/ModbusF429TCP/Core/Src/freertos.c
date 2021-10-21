@@ -161,7 +161,10 @@ void StartTask02(void *argument)
 
 	for(;;)
 	{
-	    /* Send query Modbus TCP */
+
+
+		/* Send query Modbus TCP */
+		/*
 		ModbusDATA[0]++;
 		ModbusQuery(&ModbusH, telegram); // make a query
 	    u32NotificationValue = ulTaskNotifyTake(pdTRUE, portMAX_DELAY); // block until query finishes or timeouts
@@ -170,13 +173,13 @@ void StartTask02(void *argument)
 	     //handle error
 	       //while(1);
 	    }
-
+*/
 	    /* Update input from */
-
+/*
 	    xSemaphoreTake(ModbusH2.ModBusSphrHandle , portMAX_DELAY);
 	    HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, ModbusH2.u16regs[0] & 0x1);
 	    xSemaphoreGive(ModbusH2.ModBusSphrHandle);
-
+*/
 	    osDelay(250);
 
 

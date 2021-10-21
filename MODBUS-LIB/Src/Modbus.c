@@ -490,19 +490,37 @@ bool TCPwaitConnData(modbusHandler_t *modH)
   xTCPvalid = false;
 
 
-  while(1) //wait for incoming connection
-  {
-       /* accept any incoming connection */
-	   accept_err = netconn_accept(modH->conn, &modH->newconn);
-	   if(accept_err == ERR_OK)
-	   {
-           break; //break the loop and continue with validations of TCP frame
-       }
+  if (modH->newconn == NULL){
+     while(1) //wait for incoming connection
+     {
+         /* accept any incoming connection */
+	     accept_err = netconn_accept(modH->conn, &modH->newconn);
+	     if(accept_err == ERR_OK)
+	     {
+            break; //break the loop and continue with validations of TCP frame
+         }
 
+      }
   }
 
   netconn_set_recvtimeout(modH->newconn, modH->u16timeOut );
   recv_err = netconn_recv(modH->newconn, &inbuf);
+
+  if (recv_err == ERR_CLSD) //the connection was closed
+  {
+	  netconn_close(modH->newconn);
+	  netconn_delete(modH->newconn);
+	  modH->newconn=NULL;
+	  return xTCPvalid;
+
+  }
+
+  if (recv_err == ERR_TIMEOUT) //No new data
+   {
+ 	  //just continue waiting
+ 	  return xTCPvalid;
+
+   }
 
   if (recv_err == ERR_OK)
   {
@@ -617,9 +635,7 @@ void StartTaskModbusSlave(void *argument)
 
 		  if(TCPwaitConnData(modH) == false) // wait for connection and receive data
 		  {
-			  netconn_close(modH->newconn);
-			  netconn_delete(modH->newconn);
-			  continue; // TCP package was not validated
+			continue; // TCP package was not validated
 		  }
 
 	  }
@@ -649,26 +665,38 @@ void StartTaskModbusSlave(void *argument)
   #if ENABLE_TCP ==1
 	  if(modH-> xTypeHW == TCP_HW)
 	  {
-		  netconn_close(modH->newconn);
-		  netconn_delete(modH->newconn);
+		  if (netconn_err(modH->newconn)) // if there is an error in the connection close and delete it
+		  {
+		 	  netconn_close(modH->newconn);
+		 	  netconn_delete(modH->newconn);
+		  }
+		  else
+		  {
+		 	  //just continue with the open connection
+			  //netconn_delete(modH->newconn);
+		  }
+
 	  }
   #endif
 	  continue;
     }
 
 		// check slave id
+#if ENABLE_TCP ==0
     if ( modH->u8Buffer[ID] !=  modH->u8id)   //for Modbus TCP this is not validated, user should modify accordingly if needed
 	{
-        #if ENABLE_TCP ==1
+
 		if(modH-> xTypeHW == TCP_HW)
 		{
 		    netconn_close(modH->newconn);
 			netconn_delete(modH->newconn);
+			modH->newconn = NULL;
+
 		}
-        #endif
+
 		continue;
 	 }
-
+#endif
 	  // validate message: CRC, FCT, address and size
     uint8_t u8exception = validateRequest(modH);
 	if (u8exception > 0)
@@ -686,13 +714,15 @@ void StartTaskModbusSlave(void *argument)
 		{
 		    netconn_close(modH->newconn);
 		  	netconn_delete(modH->newconn);
+		  	modH->newconn = NULL;
+
 		}
         #endif
 		continue;
 	 }
 
 	 modH->i8lastError = 0;
-	 xSemaphoreTake(modH->ModBusSphrHandle , portMAX_DELAY); //before processing the message get the semaphore
+	xSemaphoreTake(modH->ModBusSphrHandle , portMAX_DELAY); //before processing the message get the semaphore
 
 	 // process message
 	 switch(modH->u8Buffer[ FUNC ] )
@@ -724,8 +754,17 @@ void StartTaskModbusSlave(void *argument)
    #if ENABLE_TCP ==1
 	 if(modH-> xTypeHW == TCP_HW)
 	 {
-	    netconn_close(modH->newconn);
-	  	netconn_delete(modH->newconn);
+		 if (netconn_err(modH->newconn)) // if there is an error in the connection close and delete it
+		 {
+			  netconn_close(modH->newconn);
+			  netconn_delete(modH->newconn);
+			  modH->newconn = NULL;
+		 }
+		 else
+		 {
+			 //netconn_delete(modH->newconn);		  //just continue with the open connection
+		 }
+
 	 }
    #endif
 
