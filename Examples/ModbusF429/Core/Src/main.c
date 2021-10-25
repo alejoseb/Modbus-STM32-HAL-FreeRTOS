@@ -91,12 +91,12 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   /* Modbus Slave initialization */
-  ModbusH.uModbusType = MB_SLAVE;
-  //ModbusH.uModbusType = MB_MASTER;
+  //ModbusH.uModbusType = MB_SLAVE;
+  ModbusH.uModbusType = MB_MASTER;
   ModbusH.xTypeHW = USART_HW;
   ModbusH.port =  &huart3; // This is the UART port connected to STLINK in the NUCLEO F429
-  ModbusH.u8id = 1; //slave ID, always different than zero
-  //ModbusH.u8id = 0; //slave ID for master always 0
+  //ModbusH.u8id = 1; //slave ID, always different than zero
+  ModbusH.u8id = 0; //slave ID for master always 0
   ModbusH.u16timeOut = 1000;
   ModbusH.EN_Port = NULL; // No RS485
    //ModbusH2.EN_Port = LD2_GPIO_Port; // RS485 Enable

@@ -113,7 +113,7 @@ void StartModbusTestTask(void *argument)
   /* USER CODE BEGIN StartModbusTestTask */
   /* Infinite loop */
 /* master example */
-	/*
+
 	modbus_t telegram;
 	uint32_t u32NotificationValue;
 
@@ -129,19 +129,19 @@ void StartModbusTestTask(void *argument)
 
 	    ModbusQuery(&ModbusH, telegram); // make a query
 	    u32NotificationValue = ulTaskNotifyTake(pdTRUE, portMAX_DELAY); // block until query finishes
-	    if(u32NotificationValue)
+	    if(u32NotificationValue != ERR_OK_QUERY)
 	    {
 	     //handle error
-	       while(1);
+	     //  while(1);
 	    }
 
 	    osDelay(500);
 
 	}
 
-*/
-	/*  slave example */
 
+	/*  slave example */
+/*
   for(;;)
   {
 	  xSemaphoreTake(ModbusH.ModBusSphrHandle , portMAX_DELAY);
@@ -149,7 +149,7 @@ void StartModbusTestTask(void *argument)
 	  xSemaphoreGive(ModbusH.ModBusSphrHandle);
 	  osDelay(200);
   }
-
+*/
   /* USER CODE END StartModbusTestTask */
 }
 

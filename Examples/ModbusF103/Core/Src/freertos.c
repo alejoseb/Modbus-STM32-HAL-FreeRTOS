@@ -27,6 +27,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "semphr.h"
+#include "Modbus.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -182,7 +183,7 @@ void StartTaskMaster(void *argument)
   {
 	  ModbusQuery(&ModbusH, telegram[0]); // make a query
 	  u32NotificationValue = ulTaskNotifyTake(pdTRUE, portMAX_DELAY); // block until query finishes
-	  if(u32NotificationValue)
+	  if(u32NotificationValue != ERR_OK_QUERY)
 	  {
 		//handle error
 		//  while(1);

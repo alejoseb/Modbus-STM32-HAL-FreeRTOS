@@ -26,7 +26,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+ uint32_t eth_is_initialized;
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -98,11 +98,11 @@ int main(void)
 
   /* Modbus TCP initialization */
 
-  ModbusH.uModbusType = MB_SLAVE;
-  //ModbusH.uModbusType = MB_MASTER;
+  //ModbusH.uModbusType = MB_SLAVE;
+  ModbusH.uModbusType = MB_MASTER;
   //ModbusH.port =  &huart3; //this is not used for TCP
-  ModbusH.u8id = 1; //slave ID
-  //ModbusH.u8id = 0; //slave ID for master always 0
+  //ModbusH.u8id = 1; //slave ID
+  ModbusH.u8id = 0; //slave ID for master always 0
   ModbusH.u16timeOut = 1000;
   ModbusH.EN_Port = NULL; // No RS485
    //ModbusH2.EN_Port = LD2_GPIO_Port; // RS485 Enable
@@ -110,7 +110,7 @@ int main(void)
   ModbusH.u16regs = ModbusDATA;
   ModbusH.u16regsize= sizeof(ModbusDATA)/sizeof(ModbusDATA[0]);
   ModbusH.xTypeHW = TCP_HW; // TCP hardware
-  ModbusH.uTcpPort = 502;
+  ModbusH.uTcpPort = 502;   // used only for the slave (i.e., server)
 
   //Initialize Modbus library
   ModbusInit(&ModbusH);

@@ -867,6 +867,9 @@ netif_set_up(struct netif *netif)
     nd6_restart_netif(netif);
 #endif /* LWIP_IPV6 */
   }
+
+
+
 }
 
 /** Send ARP/IGMP/MLD/RS events, e.g. on link-up/netif-up or addr-change
@@ -1016,6 +1019,7 @@ netif_set_link_up(struct netif *netif)
     }
 #endif
   }
+
 }
 
 /**
@@ -1040,6 +1044,7 @@ netif_set_link_down(struct netif *netif)
     }
 #endif
   }
+
 }
 
 #if LWIP_NETIF_LINK_CALLBACK
