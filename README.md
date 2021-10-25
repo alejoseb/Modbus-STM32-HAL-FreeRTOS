@@ -11,9 +11,9 @@ This is a port of the Modbus library for Arduino: https://github.com/smarmengol/
 
 Video demo for STM32F4-dicovery board and TouchGFX: https://youtu.be/XDCQvu0LirY
 
-`NEW` port for the [Raspberry PI Pico](https://github.com/alejoseb/Modbus-PI-Pico-FreeRTOS).
+`NEW` Script examples to test the library based on Pymodbus
 
-`NEW` DMA suppport for TX and RX USART Modbus RTU for higher baud rates.
+`NEW` TCP slave (server) multi-client with configurable auto-aging algorithm for management of TCP connections
 
 
 ## Translations supported by the community:
@@ -65,7 +65,7 @@ Examples provided for STM32CubeIDE Version: 1.3.0 https://www.st.com/en/developm
 - Compile and start your debugging session!
 - If you need to adjust the Baud rate or any other parameter use the Cube-MX assistant (recommended). If you change the USART port you need to enable the interrupts for the selected USART. Check UARTCallback.c for more details.
 
-### NOTES :
+### Notes and Known issues :
 - The standard interrupt mode for Modbus RTU USART is suitable for 115200 bps or lower baud rates. 
 For Higher baud rates---tested up to 2 Mbps---it is recommended to use the DMA mode. Check the corresponding examples. It will require 
 extra configurations for the DMA channels in the Cube HAL.
@@ -75,7 +75,11 @@ To use this example, you need to activate USB-CDC in your ModbusConfig.h file.
 
 - The TCP examples have been validated with NUCLEO F429ZI and H743ZI. 
 To use these examples, you need to activate TCP in your ModbusConfig.h file.
+ 
+- The HAL implementation for LWIP TCP of the CubeMX genrates code that might not work if the cable is not connected from the very beginning.
+This is a known issue that can be solved manually changing the generated code as detailed here: https://community.st.com/s/question/0D50X0000CDolzDSQR/ethernet-does-not-work-if-uc-starts-with-the-cable-disconnected
 
+Check the TCP example for the NUCLEO F429, which includes the manual modifications. 
 
 ## How to port to your own MCU
 - Create a new project in STM32Cube IDE
@@ -92,6 +96,10 @@ To use these examples, you need to activate TCP in your ModbusConfig.h file.
 
 ## Recommended Modbus Master and Slave testing tools for Linux and Windows
 
+### Master and slave Python library
+
+Linux/Windows: https://github.com/riptideio/pymodbus
+
 ### Master client Qmodbus
 Linux:    https://launchpad.net/~js-reynaud/+archive/ubuntu/qmodbus
 
@@ -105,6 +113,7 @@ Windows: https://sourceforge.net/projects/modrssim2/
 ## TODOs:
 - Implement wrapper functions for Master function codes. Currently, telegrams are defined manually. 
 - Improve function documentation
+- ~~MODBUS TCP implementation improvement to support multiple clients and TCP session management~~ (10/24/2021)
 - ~~Improve the queue for data reception; the current method is too heavy it should be replaced with a simple buffer, a stream, or another FreeRTOS primitive.~~ Solved Queue replaced by a Ring Buffer (03/19/2021)
 - ~~Test with Rs485 transceivers (implemented but not tested)~~ Verified with MAX485 transceivers (01/03/2021)
 - ~~MODBUS TCP implementation~~ (28/04/2021)

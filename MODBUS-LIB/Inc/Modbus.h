@@ -103,7 +103,9 @@ typedef enum ERR_LIST
     ERR_BAD_SIZE                  = -6,
     ERR_BAD_ADDRESS               = -7,
     ERR_TIME_OUT		          = -8,
-    ERR_BAD_SLAVE_ID		      = -9
+    ERR_BAD_SLAVE_ID		      = -9,
+	ERR_BAD_TCP_ID		          = -10,
+	ERR_OK_QUERY				  = -11
 
 }mb_errot_t;
 
@@ -145,11 +147,21 @@ typedef struct
 #if ENABLE_TCP ==1
     uint32_t   xIpAddress;
     uint16_t u16Port;
+    uint8_t  u8clientID;
 #endif
 }
 modbus_t;
 
 
+#if ENABLE_TCP == 1
+typedef struct
+{
+	struct netconn *conn;
+	uint32_t aging;
+}
+tcpclients_t;
+
+#endif
 
 
 /**
@@ -196,11 +208,14 @@ typedef struct
 	mb_hardware_t xTypeHW;
 
 #if ENABLE_TCP == 1
-	uint16_t uTcpPort;
-	struct netconn *newconn;
+
+	tcpclients_t newconns[NUMBERTCPCONN];
 	struct netconn *conn;
-	uint16_t u16TransactionID;
 	uint32_t xIpAddress;
+	uint16_t u16TransactionID;
+	uint16_t uTcpPort; // this is only used for the slave (i.e., the server)
+	uint8_t newconnIndex;
+
 #endif
 
 }
@@ -236,6 +251,9 @@ uint16_t getTimeOut(); //!<get communication watch-dog timer value
 bool getTimeOutState(); //!<get communication watch-dog timer state
 void ModbusQuery(modbusHandler_t * modH, modbus_t telegram ); // put a query in the queue tail
 void ModbusQueryInject(modbusHandler_t * modH, modbus_t telegram); //put a query in the queue head
+#if ENABLE_TCP ==1
+void ModbusCloseConn(modbusHandler_t * modH); //close the TCP connection
+#endif
 uint16_t getInCnt(); //!<number of incoming messages
 uint16_t getOutCnt(); //!<number of outcoming messages
 uint16_t getErrCnt(); //!<error counter

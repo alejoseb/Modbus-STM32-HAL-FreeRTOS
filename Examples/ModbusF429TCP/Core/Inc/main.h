@@ -37,6 +37,7 @@ extern "C" {
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
+extern  uint32_t eth_is_initialized;
 extern modbusHandler_t ModbusH;
 extern uint16_t ModbusDATA[16];
 extern modbusHandler_t ModbusH2;

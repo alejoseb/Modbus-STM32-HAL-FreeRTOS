@@ -59,7 +59,7 @@ const osThreadAttr_t defaultTask_attributes = {
 osThreadId_t myTaskModbusTesHandle;
 const osThreadAttr_t myTaskModbusTes_attributes = {
   .name = "myTaskModbusTes",
-  .stack_size = 256 * 4,
+  .stack_size = 256 * 8,
   .priority = (osPriority_t) osPriorityLow,
 };
 
@@ -147,36 +147,64 @@ void StartDefaultTask(void *argument)
 void StartTask02(void *argument)
 {
   /* USER CODE BEGIN StartTask02 */
-	modbus_t telegram;
+	modbus_t telegram[2];
 	uint32_t u32NotificationValue;
 
-	telegram.u8id = 1; // slave address
-	telegram.u8fct = MB_FC_WRITE_MULTIPLE_REGISTERS; // function code (this one is registers read)
-	//telegram.u16RegAdd = 0x160; // start address in slave
-	telegram.u16RegAdd = 0x0; // start address in slave
-	telegram.u16CoilsNo = 10; // number of elements (coils or registers) to read
-	telegram.u16reg = ModbusDATA; // pointer to a memory array in the Arduino
-	IP_ADDR4((ip4_addr_t *)&telegram.xIpAddress, 192, 168, 0, 12); //address of the slave
-	telegram.u16Port = 502;
+
+	telegram[0].u8id = 1; // slave address
+	telegram[0].u8fct = MB_FC_WRITE_MULTIPLE_REGISTERS; // function code (this one is registers read)
+	//telegram[0].u16RegAdd = 0x160; // start address in slave
+	telegram[0].u16RegAdd = 0x0; // start address in slave
+	telegram[0].u16CoilsNo = 10; // number of elements (coils or registers) to read
+	telegram[0].u16reg = ModbusDATA; // pointer to a memory array in the microcontroller
+	IP_ADDR4((ip4_addr_t *)&telegram[0].xIpAddress, 10, 75, 15, 20); //address of the slave
+	telegram[0].u16Port = 502;
+	telegram[0].u8clientID = 0; // this identifies the TCP client session. The library supports up to "NUMBERTCPCONN"
+							 //	simultaneous connections to different slaves. The value is defined in ModbusConfig.h file.
+							 // The library uses the IP and port to open the TCP connection and keep the connection open regardless
+							 // of later changes to those values. To change the IP address and Port, close the connection
+							 // using the corresponding u8clientID, update the IP and Port and execute a new ModbusQuery.
+
+	telegram[1].u8id = 1; // slave address
+	telegram[1].u8fct = MB_FC_WRITE_MULTIPLE_REGISTERS; // function code (this one is registers read)
+	//telegram[0].u16RegAdd = 0x160; // start address in slave
+	telegram[1].u16RegAdd = 0x0; // start address in slave
+	telegram[1].u16CoilsNo = 10; // number of elements (coils or registers) to read
+	telegram[1].u16reg = ModbusDATA; // pointer to a memory array in the microcontroller
+	IP_ADDR4((ip4_addr_t *)&telegram[1].xIpAddress, 10, 75, 15, 20); //address of the slave
+	telegram[1].u16Port = 504;
+	telegram[1].u8clientID = 1; //this telegram will use the second connection slot
 
 	for(;;)
 	{
-	    /* Send query Modbus TCP */
+
+
+		/* Send query Modbus TCP */
+
 		ModbusDATA[0]++;
-		ModbusQuery(&ModbusH, telegram); // make a query
+		ModbusQuery(&ModbusH, telegram[0]); // make a query
 	    u32NotificationValue = ulTaskNotifyTake(pdTRUE, portMAX_DELAY); // block until query finishes or timeouts
-	    if(u32NotificationValue)
+	    if(u32NotificationValue != ERR_OK_QUERY)
 	    {
 	     //handle error
-	       //while(1);
+
+	    	ModbusDATA[1]++;
+	    }
+
+	    ModbusDATA[0]++;
+	    ModbusQuery(&ModbusH, telegram[1]); // make a query
+	    u32NotificationValue = ulTaskNotifyTake(pdTRUE, portMAX_DELAY); // block until query finishes or timeouts
+	    if(u32NotificationValue != ERR_OK_QUERY)
+	    {
+	    	ModbusDATA[2]++;
 	    }
 
 	    /* Update input from */
-
+/*
 	    xSemaphoreTake(ModbusH2.ModBusSphrHandle , portMAX_DELAY);
 	    HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, ModbusH2.u16regs[0] & 0x1);
 	    xSemaphoreGive(ModbusH2.ModBusSphrHandle);
-
+*/
 	    osDelay(250);
 
 
@@ -187,7 +215,15 @@ void StartTask02(void *argument)
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
+void ethernetif_notify_conn_changed(struct netif *netif)
+{
+  /* NOTE : This is function could be implemented in user file
+            when the callback is needed,
+  */
 
+	ethernetif_set_link(&netif);
+
+}
 /* USER CODE END Application */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

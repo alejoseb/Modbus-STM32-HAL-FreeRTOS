@@ -1250,7 +1250,7 @@
  * TCP_SYNMAXRTX: Maximum number of retransmissions of SYN segments.
  */
 #if !defined TCP_SYNMAXRTX || defined __DOXYGEN__
-#define TCP_SYNMAXRTX                   5
+#define TCP_SYNMAXRTX                   6
 #endif
 
 /**
