@@ -106,7 +106,7 @@ static int8_t SendQuery(modbusHandler_t *modH ,  modbus_t telegram);
 
 static bool TCPwaitConnData(modbusHandler_t *modH);
 static void  TCPinitserver(modbusHandler_t *modH);
-static mb_errot_t TCPconnectserver(modbusHandler_t * modH, uint32_t address, uint16_t port);
+static mb_errot_t TCPconnectserver(modbusHandler_t * modH, modbus_t *telegram);
 static mb_errot_t TCPgetRxBuffer(modbusHandler_t * modH);
 
 #endif
@@ -518,7 +518,7 @@ bool TCPwaitConnData(modbusHandler_t *modH)
 
   }
 
-  netconn_set_recvtimeout(clientconn->conn , TCPTIMEOUT);
+  netconn_set_recvtimeout(clientconn->conn ,  modH->u16timeOut);
   recv_err = netconn_recv(clientconn->conn, &inbuf);
 
   if (recv_err == ERR_CLSD) //the connection was closed
@@ -789,6 +789,19 @@ void ModbusQueryInject(modbusHandler_t * modH, modbus_t telegram )
 	xQueueSendToFront(modH->QueueTelegramHandle, &telegram, 0);
 }
 
+
+#if ENABLE_TCP ==1
+void ModbusCloseConn(modbusHandler_t * modH)
+{
+
+	 netconn_close(modH->newconns[modH->newconnIndex].conn);
+	 netconn_delete(modH->newconns[modH->newconnIndex].conn);
+	 modH->newconns[modH->newconnIndex].conn = NULL;
+
+}
+#endif
+
+
 /**
  * @brief
  * *** Only Modbus Master ***
@@ -812,6 +825,7 @@ int8_t SendQuery(modbusHandler_t *modH ,  modbus_t telegram )
 	if (modH->u8id!=0) error = ERR_NOT_MASTER;
 	if (modH->i8state != COM_IDLE) error = ERR_POLLING ;
 	if ((telegram.u8id==0) || (telegram.u8id>247)) error = ERR_BAD_SLAVE_ID;
+
 
 	if(error)
 	{
@@ -895,6 +909,7 @@ int8_t SendQuery(modbusHandler_t *modH ,  modbus_t telegram )
 	    break;
 	}
 
+
 	sendTxBuffer(modH);
 
 	xSemaphoreGive(modH->ModBusSphrHandle);
@@ -908,33 +923,46 @@ int8_t SendQuery(modbusHandler_t *modH ,  modbus_t telegram )
 
 #if ENABLE_TCP == 1
 
-static mb_errot_t TCPconnectserver(modbusHandler_t * modH, uint32_t address, uint16_t port)
+static  mb_errot_t TCPconnectserver(modbusHandler_t * modH, modbus_t *telegram)
 {
 
-	 /*
+
 	err_t err;
+	 tcpclients_t *clientconn;
 
 
+	//select the current connection slot to work with
+    clientconn = &modH->newconns[modH->newconnIndex];
 
-	 modH->newconn = netconn_new(NETCONN_TCP);
-	 if (modH->newconn == NULL)
-	 {
-		 while(1)
-		 {
-	 	  // error creating new connection check your configuration and heap size
-	 	 }
-	 }
+	if(telegram->u8clientID >= NUMBERTCPCONN )
+	{
+		return ERR_BAD_TCP_ID;
+	}
 
-	 err = netconn_connect(modH->newconn, (ip_addr_t *) &address, port);
+	// if the connection is null open a new connection
+	if (clientconn->conn == NULL)
+	{
+		 clientconn->conn = netconn_new(NETCONN_TCP);
+	     if (clientconn == NULL)
+	     {
+	   	  while(1)
+	   	  {
+	     	  // error creating new connection check your configuration and heap size
+	     	 }
+	     }
 
-	 if (err  != ERR_OK )
-	 {
-	 	   netconn_close(modH->newconn);
-	       netconn_delete(modH->newconn);
-	       return ERR_TIME_OUT;
-	  }
-*/
-	  return ERR_OK;
+
+	     err = netconn_connect(clientconn->conn, (ip_addr_t *)&telegram->xIpAddress, telegram->u16Port);
+
+	     if (err  != ERR_OK )
+	     {
+	     	   netconn_close(clientconn->conn);
+	           netconn_delete(clientconn->conn);
+	           clientconn=NULL;
+	           return ERR_TIME_OUT;
+	      }
+	}
+	return ERR_OK;
 }
 
 
@@ -951,7 +979,7 @@ static mb_errot_t TCPgetRxBuffer(modbusHandler_t * modH)
 	 //select the current connection slot to work with
      clientconn = &modH->newconns[modH->newconnIndex];
 
-	netconn_set_recvtimeout(clientconn->conn, TCPTIMEOUT);
+	netconn_set_recvtimeout(clientconn->conn, modH->u16timeOut);
 	err = netconn_recv(clientconn->conn, &inbuf);
 
 	uLength = 0;
@@ -1012,14 +1040,30 @@ void StartTaskModbusMaster(void *argument)
 #if ENABLE_TCP ==1
      if(modH->xTypeHW == TCP_HW)
      {
-
-    	  ulNotificationValue = TCPconnectserver( modH, telegram.xIpAddress, telegram.u16Port );
+    	  modH->newconnIndex = telegram.u8clientID;
+    	  ulNotificationValue = TCPconnectserver( modH, &telegram);
  	      if(ulNotificationValue == ERR_OK)
 	      {
- 		      SendQuery(modH, telegram);
+
+
+ 	    	  SendQuery(modH, telegram);
  		     /* Block until a Modbus Frame arrives or query timeouts*/
  		      ulNotificationValue = TCPgetRxBuffer(modH); // TCP receives the data and the notification simultaneously since it is synchronous
+
+ 		      if (ulNotificationValue != ERR_OK) //close the TCP connection
+ 		      {
+ 		    	 netconn_close(modH->newconns[modH->newconnIndex].conn);
+ 		    	 netconn_delete(modH->newconns[modH->newconnIndex].conn);
+ 		    	 modH->newconns[modH->newconnIndex].conn = NULL;
+
+ 		      }
 	      }
+ 	      else
+ 	      {
+ 	    	 netconn_close(modH->newconns[modH->newconnIndex].conn);
+ 	    	 netconn_delete(modH->newconns[modH->newconnIndex].conn);
+ 	    	 modH->newconns[modH->newconnIndex].conn = NULL;
+ 	      }
      }
      else // send a query for USART and USB_CDC
      {
@@ -1109,8 +1153,13 @@ void StartTaskModbusMaster(void *argument)
 	  }
 	  modH->i8state = COM_IDLE;
 
-	  xSemaphoreGive(modH->ModBusSphrHandle); //Release the semaphore
-	  xTaskNotify((TaskHandle_t)telegram.u32CurrentTask, modH->i8lastError, eSetValueWithOverwrite);
+	  if (modH->i8lastError ==0) // no error the error_OK, we need to use a different value than 0 to detect the timeout
+	  {
+		  xSemaphoreGive(modH->ModBusSphrHandle); //Release the semaphore
+		  xTaskNotify((TaskHandle_t)telegram.u32CurrentTask, ERR_OK_QUERY, eSetValueWithOverwrite);
+	  }
+
+
 	  continue;
 	 }
 
@@ -1566,8 +1615,20 @@ if(modH->xTypeHW != TCP_HW)
     	  xNetVectors[1].len = modH->u8BufferSize;
     	  xNetVectors[1].ptr = (void *) modH->u8Buffer;
 
+
     	  netconn_set_sendtimeout(modH->newconns[modH->newconnIndex].conn, modH->u16timeOut);
-    	  netconn_write_vectors_partly(modH->newconns[modH->newconnIndex].conn, xNetVectors, 2, NETCONN_COPY, &uBytesWritten);
+    	  err_enum_t err;
+
+    	  err = netconn_write_vectors_partly(modH->newconns[modH->newconnIndex].conn, xNetVectors, 2, NETCONN_COPY, &uBytesWritten);
+    	  if (err != ERR_OK )
+    	  {
+    		  netconn_close(modH->newconns[modH->newconnIndex].conn);
+    		  netconn_delete(modH->newconns[modH->newconnIndex].conn);
+    		  modH->newconns[modH->newconnIndex].conn = NULL;
+
+    	  }
+
+
     	  if(modH->uModbusType == MB_MASTER )
     	  {
     	    xTimerReset(modH->xTimerTimeout,0);
