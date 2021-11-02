@@ -101,9 +101,10 @@ int main(void)
   //ModbusH.uModbusType = MB_SLAVE;
   ModbusH.uModbusType = MB_MASTER;
   //ModbusH.port =  &huart3; //this is not used for TCP
-  //ModbusH.u8id = 1; //slave ID
+  ModbusH.u8id = 1; //slave ID
   ModbusH.u8id = 0; //slave ID for master always 0
-  ModbusH.u16timeOut = 1000;
+  //ModbusH.u16timeOut = 10; // For a slave keep this value around 10 for better responsiveness,
+  ModbusH.u16timeOut = 100; // for a master it could be higher depending on the slave speed
   ModbusH.EN_Port = NULL; // No RS485
    //ModbusH2.EN_Port = LD2_GPIO_Port; // RS485 Enable
    //ModbusH2.EN_Pin = LD2_Pin; // RS485 Enable

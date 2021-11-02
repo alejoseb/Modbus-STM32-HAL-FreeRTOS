@@ -24,9 +24,11 @@
 #include "main.h"
 #include "cmsis_os.h"
 
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "ip_addr.h"
+#include "ethernetif.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -157,8 +159,8 @@ void StartTask02(void *argument)
 	telegram[0].u16RegAdd = 0x0; // start address in slave
 	telegram[0].u16CoilsNo = 10; // number of elements (coils or registers) to read
 	telegram[0].u16reg = ModbusDATA; // pointer to a memory array in the microcontroller
-	IP_ADDR4((ip4_addr_t *)&telegram[0].xIpAddress, 10, 75, 15, 20); //address of the slave
-	telegram[0].u16Port = 502;
+	IP_ADDR4((ip4_addr_t *)&telegram[0].xIpAddress, 10, 75, 15, 61); //address of the slave
+	telegram[0].u16Port = 5020;
 	telegram[0].u8clientID = 0; // this identifies the TCP client session. The library supports up to "NUMBERTCPCONN"
 							 //	simultaneous connections to different slaves. The value is defined in ModbusConfig.h file.
 							 // The library uses the IP and port to open the TCP connection and keep the connection open regardless
@@ -171,8 +173,8 @@ void StartTask02(void *argument)
 	telegram[1].u16RegAdd = 0x0; // start address in slave
 	telegram[1].u16CoilsNo = 10; // number of elements (coils or registers) to read
 	telegram[1].u16reg = ModbusDATA; // pointer to a memory array in the microcontroller
-	IP_ADDR4((ip4_addr_t *)&telegram[1].xIpAddress, 10, 75, 15, 20); //address of the slave
-	telegram[1].u16Port = 504;
+	IP_ADDR4((ip4_addr_t *)&telegram[1].xIpAddress, 10, 75, 15, 61); //address of the slave
+	telegram[1].u16Port = 5024;
 	telegram[1].u8clientID = 1; //this telegram will use the second connection slot
 
 	for(;;)
@@ -180,6 +182,7 @@ void StartTask02(void *argument)
 
 
 		/* Send query Modbus TCP */
+
 
 		ModbusDATA[0]++;
 		ModbusQuery(&ModbusH, telegram[0]); // make a query
@@ -198,6 +201,8 @@ void StartTask02(void *argument)
 	    {
 	    	ModbusDATA[2]++;
 	    }
+
+
 
 	    /* Update input from */
 /*
