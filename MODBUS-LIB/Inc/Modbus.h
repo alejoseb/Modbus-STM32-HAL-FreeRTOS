@@ -231,11 +231,6 @@ enum
 
 
 
-
-
-
-
-
 modbusHandler_t *mHandlers[MAX_M_HANDLERS];
 
 // Function prototypes
@@ -251,21 +246,13 @@ uint16_t getTimeOut(); //!<get communication watch-dog timer value
 bool getTimeOutState(); //!<get communication watch-dog timer state
 void ModbusQuery(modbusHandler_t * modH, modbus_t telegram ); // put a query in the queue tail
 void ModbusQueryInject(modbusHandler_t * modH, modbus_t telegram); //put a query in the queue head
-#if ENABLE_TCP ==1
-void ModbusCloseConn(modbusHandler_t * modH); //close the TCP connection
-#endif
-uint16_t getInCnt(); //!<number of incoming messages
-uint16_t getOutCnt(); //!<number of outcoming messages
-uint16_t getErrCnt(); //!<error counter
-uint8_t getID(); //!<get slave ID between 1 and 247
-uint8_t getState();
-uint8_t getLastError(); //!<get last error message
-void setID( uint8_t u8id ); //!<write new ID for the slave
-void setTxendPinOverTime( uint32_t u32overTime );
-void ModbusEnd(); //!<finish any communication and release serial communication port
 void StartTaskModbusSlave(void *argument); //slave
 void StartTaskModbusMaster(void *argument); //master
 uint16_t calcCRC(uint8_t *Buffer, uint8_t u8length);
+
+#if ENABLE_TCP == 1
+void ModbusCloseConn(struct netconn *conn); //close the TCP connection
+#endif
 
 
 //Function prototypes for ModbusRingBuffer
@@ -275,7 +262,25 @@ uint8_t RingGetNBytes(modbusRingBuffer_t *xRingBuffer, uint8_t *buffer, uint8_t 
 uint8_t RingCountBytes(modbusRingBuffer_t *xRingBuffer); // return the number of available bytes
 void RingClear(modbusRingBuffer_t *xRingBuffer); // flushes the ring buffer
 
-extern uint8_t numberHandlers;
+extern uint8_t numberHandlers; //global variable to maintain the number of concurrent handlers
+
+
+
+
+/* prototypes of the original library not implemented
+
+uint16_t getInCnt(); //!<number of incoming messages
+uint16_t getOutCnt(); //!<number of outcoming messages
+uint16_t getErrCnt(); //!<error counter
+uint8_t getID(); //!<get slave ID between 1 and 247
+uint8_t getState();
+uint8_t getLastError(); //!<get last error message
+void setID( uint8_t u8id ); //!<write new ID for the slave
+void setTxendPinOverTime( uint32_t u32overTime );
+void ModbusEnd(); //!<finish any communication and release serial communication port
+
+*/
+
 
 
 #endif /* THIRD_PARTY_MODBUS_INC_MODBUS_H_ */
