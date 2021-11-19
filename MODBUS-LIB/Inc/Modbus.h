@@ -242,8 +242,8 @@ void ModbusStartCDC(modbusHandler_t * modH);
 #endif
 
 void setTimeOut( uint16_t u16timeOut); //!<write communication watch-dog timer
-uint16_t getTimeOut(); //!<get communication watch-dog timer value
-bool getTimeOutState(); //!<get communication watch-dog timer state
+uint16_t getTimeOut(void); //!<get communication watch-dog timer value
+bool getTimeOutState(void); //!<get communication watch-dog timer state
 void ModbusQuery(modbusHandler_t * modH, modbus_t telegram ); // put a query in the queue tail
 void ModbusQueryInject(modbusHandler_t * modH, modbus_t telegram); //put a query in the queue head
 void StartTaskModbusSlave(void *argument); //slave

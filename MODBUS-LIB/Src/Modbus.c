@@ -119,7 +119,7 @@ void RingAdd(modbusRingBuffer_t *xRingBuffer, uint8_t u8Val)
 {
 
 	xRingBuffer->uxBuffer[xRingBuffer->u8end] = u8Val;
-	xRingBuffer->u8end = (xRingBuffer->u8end + 1) % MAX_BUFFER;
+	xRingBuffer->u8end = (uint8_t)(xRingBuffer->u8end + 1) % MAX_BUFFER;
 	if (xRingBuffer->u8available == MAX_BUFFER)
 	{
 		xRingBuffer->overflow = true;
@@ -468,7 +468,7 @@ void vTimerCallbackTimeout(TimerHandle_t *pxTimer)
 	{
 
 		if( (TimerHandle_t *)mHandlers[i]->xTimerTimeout ==  pxTimer ){
-				xTaskNotify(mHandlers[i]->myTaskModbusAHandle, ERR_TIME_OUT, eSetValueWithOverwrite);
+				xTaskNotify(mHandlers[i]->myTaskModbusAHandle, (uint32_t)ERR_TIME_OUT, eSetValueWithOverwrite);
 		}
 
 	}
@@ -636,7 +636,7 @@ void StartTaskModbusSlave(void *argument)
   for(;;)
   {
 
-	modH->i8lastError = 0;
+	modH->i8lastError = (mb_errot_t)0;
 
 
 #if ENABLE_USB_CDC ==1
@@ -708,19 +708,19 @@ void StartTaskModbusSlave(void *argument)
     uint8_t u8exception = validateRequest(modH);
 	if (u8exception > 0)
 	{
-	    if (u8exception != ERR_TIME_OUT)
+	    if (u8exception != (uint8_t)ERR_TIME_OUT)
 		{
 		    buildException( u8exception, modH);
 			sendTxBuffer(modH);
 		}
-		modH->i8lastError = u8exception;
+		modH->i8lastError = (mb_errot_t)u8exception;
 		//return u8exception
 
 		continue;
 	 }
 
-	 modH->i8lastError = 0;
-	xSemaphoreTake(modH->ModBusSphrHandle , portMAX_DELAY); //before processing the message get the semaphore
+	 modH->i8lastError = (mb_errot_t)0;
+	 xSemaphoreTake(modH->ModBusSphrHandle , portMAX_DELAY); //before processing the message get the semaphore
 
 	 // process message
 	 switch(modH->u8Buffer[ FUNC ] )
@@ -819,14 +819,14 @@ int8_t SendQuery(modbusHandler_t *modH ,  modbus_t telegram )
 	uint8_t  error = 0;
 	xSemaphoreTake(modH->ModBusSphrHandle , portMAX_DELAY); //before processing the message get the semaphore
 
-	if (modH->u8id!=0) error = ERR_NOT_MASTER;
-	if (modH->i8state != COM_IDLE) error = ERR_POLLING ;
-	if ((telegram.u8id==0) || (telegram.u8id>247)) error = ERR_BAD_SLAVE_ID;
+	if (modH->u8id!=0) error = (uint8_t)ERR_NOT_MASTER;
+	if (modH->i8state != COM_IDLE) error = (uint8_t)ERR_POLLING ;
+	if ((telegram.u8id==0) || (telegram.u8id>247)) error = (uint8_t)ERR_BAD_SLAVE_ID;
 
 
 	if(error)
 	{
-		 modH->i8lastError = error;
+		 modH->i8lastError = (mb_errot_t)error;
 		 xSemaphoreGive(modH->ModBusSphrHandle);
 		 return error;
 	}
@@ -912,7 +912,7 @@ int8_t SendQuery(modbusHandler_t *modH ,  modbus_t telegram )
 	xSemaphoreGive(modH->ModBusSphrHandle);
 
 	modH->i8state = COM_WAITING;
-	modH->i8lastError = 0;
+	modH->i8lastError = (mb_errot_t)0;
 	return 0;
 
 
@@ -1086,7 +1086,7 @@ void StartTaskModbusMaster(void *argument)
 #endif
 
 	  // notify the task the request timeout
-      modH->i8lastError = 0;
+      modH->i8lastError = (mb_errot_t)0;
       if(ulNotificationValue)
       {
     	  modH->i8state = COM_IDLE;
@@ -1127,12 +1127,12 @@ void StartTaskModbusMaster(void *argument)
 	  if (u8exception != 0)
 	  {
 		 modH->i8state = COM_IDLE;
-         modH->i8lastError = u8exception;
+		 modH->i8lastError = (mb_errot_t)u8exception;
 		 xTaskNotify((TaskHandle_t)telegram.u32CurrentTask, modH->i8lastError, eSetValueWithOverwrite);
 	     continue;
 	  }
 
-	  modH->i8lastError = u8exception;
+	  modH->i8lastError = (mb_errot_t)u8exception;
 
 	  xSemaphoreTake(modH->ModBusSphrHandle , portMAX_DELAY); //before processing the message get the semaphore
 	  // process answer
@@ -1162,7 +1162,7 @@ void StartTaskModbusMaster(void *argument)
 	  if (modH->i8lastError ==0) // no error the error_OK, we need to use a different value than 0 to detect the timeout
 	  {
 		  xSemaphoreGive(modH->ModBusSphrHandle); //Release the semaphore
-		  xTaskNotify((TaskHandle_t)telegram.u32CurrentTask, ERR_OK_QUERY, eSetValueWithOverwrite);
+		  xTaskNotify((TaskHandle_t)telegram.u32CurrentTask, (uint32_t)ERR_OK_QUERY, eSetValueWithOverwrite);
 	  }
 
 
@@ -1237,7 +1237,7 @@ uint8_t validateAnswer(modbusHandler_t *modH)
     if ( calcCRC(modH->u8Buffer,  modH->u8BufferSize-2) != u16MsgCRC )
     {
     	modH->u16errCnt ++;
-        return ERR_BAD_CRC;
+        return (uint8_t)ERR_BAD_CRC;
     }
 #if ENABLE_TCP ==1
 	}
@@ -1248,7 +1248,7 @@ uint8_t validateAnswer(modbusHandler_t *modH)
     if ((modH->u8Buffer[ FUNC ] & 0x80) != 0)
     {
     	modH->u16errCnt ++;
-        return ERR_EXCEPTION;
+        return (uint8_t)ERR_EXCEPTION;
     }
 
     // check fct code
@@ -1264,7 +1264,7 @@ uint8_t validateAnswer(modbusHandler_t *modH)
     if (!isSupported)
     {
     	modH->u16errCnt ++;
-        return EXC_FUNC_CODE;
+        return (uint8_t)EXC_FUNC_CODE;
     }
 
     return 0; // OK, no exception code thrown
@@ -1332,8 +1332,8 @@ uint8_t validateRequest(modbusHandler_t *modH)
 	    {
 	    	if ( calcCRC( modH->u8Buffer,  modH->u8BufferSize-2 ) != u16MsgCRC )
 	    	{
-	    		modH->u16errCnt ++;
-	    		return ERR_BAD_CRC;
+			modH->u16errCnt ++;
+			return (uint8_t)ERR_BAD_CRC;
 	    		}
 	    }
 #else
@@ -1344,8 +1344,8 @@ uint8_t validateRequest(modbusHandler_t *modH)
 
 	    if ( calcCRC( modH->u8Buffer,  modH->u8BufferSize-2 ) != u16MsgCRC )
 	    {
-	       		modH->u16errCnt ++;
-	       		return ERR_BAD_CRC;
+			modH->u16errCnt ++;
+			return (uint8_t)ERR_BAD_CRC;
 	    }
 
 
