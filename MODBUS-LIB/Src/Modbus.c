@@ -506,7 +506,8 @@ bool TCPwaitConnData(modbusHandler_t *modH)
 	  if(accept_err != ERR_OK)
 	  {
 		  // not valid incoming connection at this time
-		  ModbusCloseConn(clientconn->conn);
+		  //ModbusCloseConn(clientconn->conn);
+		  ModbusCloseConnNull(modH);
 		  return xTCPvalid;
       }
 	  else
@@ -522,7 +523,8 @@ bool TCPwaitConnData(modbusHandler_t *modH)
   if (recv_err == ERR_CLSD) //the connection was closed
   {
 	  //Close and clean the connection
-	  ModbusCloseConn(clientconn->conn);
+	  //ModbusCloseConn(clientconn->conn);
+	  ModbusCloseConnNull(modH);
 
 	  clientconn->aging = 0;
 	  return xTCPvalid;
@@ -537,7 +539,8 @@ bool TCPwaitConnData(modbusHandler_t *modH)
 	  // if the connection is old enough and inactive close and clean it up
 	  if (modH->newconns[modH->newconnIndex].aging >= TCPAGINGCYCLES)
 	  {
-		  ModbusCloseConn(clientconn->conn);
+		  //ModbusCloseConn(clientconn->conn);
+		  ModbusCloseConnNull(modH);
 		  clientconn->aging = 0;
 	  }
 
@@ -793,10 +796,23 @@ void ModbusCloseConn(struct netconn *conn)
 	{
 		netconn_close(conn);
 		netconn_delete(conn);
-		conn = NULL;
 	}
 
 }
+
+void ModbusCloseConnNull(modbusHandler_t * modH)
+{
+
+	if(modH->newconns[modH->newconnIndex].conn  != NULL)
+	{
+
+		netconn_close(modH->newconns[modH->newconnIndex].conn);
+		netconn_delete(modH->newconns[modH->newconnIndex].conn);
+		modH->newconns[modH->newconnIndex].conn = NULL;
+	}
+
+}
+
 #endif
 
 
@@ -941,10 +957,10 @@ static  mb_errot_t TCPconnectserver(modbusHandler_t * modH, modbus_t *telegram)
 	if (clientconn->conn == NULL)
 	{
 		 clientconn->conn = netconn_new(NETCONN_TCP);
-	     if (clientconn == NULL)
+	     if (clientconn->conn  == NULL)
 	     {
-	   	  while(1)
-	   	  {
+	   	     while(1)
+	   	     {
 	     	  // error creating new connection check your configuration and heap size
 	     	 }
 	     }
@@ -954,12 +970,10 @@ static  mb_errot_t TCPconnectserver(modbusHandler_t * modH, modbus_t *telegram)
 
 	     if (err  != ERR_OK )
 	     {
-	     	   /*
-	    	   netconn_close(clientconn->conn);
-	           netconn_delete(clientconn->conn);
-	           clientconn=NULL;
-	           */
-	    	   ModbusCloseConn(clientconn->conn);
+
+	    	   //ModbusCloseConn(clientconn->conn);
+	    	   ModbusCloseConnNull(modH);
+
 	           return ERR_TIME_OUT;
 	      }
 	}
@@ -995,7 +1009,8 @@ static mb_errot_t TCPgetRxBuffer(modbusHandler_t * modH)
   	        err = netbuf_data(inbuf, (void**)&buf, &buflen);
   	        if(err == ERR_OK )
   	        {
-                 if (buflen>11) // minimum frame size for modbus TCP
+                 if( (buflen>11  && (modH->uModbusType == MB_SLAVE  ))  ||
+                	 (buflen>=10 && (modH->uModbusType == MB_MASTER ))  ) // minimum frame size for modbus TCP
                  {
         	         if(buf[2] == 0 || buf[3] == 0 ) //validate protocol ID
         	         {
@@ -1053,23 +1068,16 @@ void StartTaskModbusMaster(void *argument)
 
  		      if (ulNotificationValue != ERR_OK) //close the TCP connection
  		      {
- 		    	 /*
- 		    	 netconn_close(modH->newconns[modH->newconnIndex].conn);
- 		    	 netconn_delete(modH->newconns[modH->newconnIndex].conn);
- 		    	 modH->newconns[modH->newconnIndex].conn = NULL;
- 		    	 */
- 		    	 ModbusCloseConn(modH->newconns[modH->newconnIndex].conn);
+
+ 		    	 //ModbusCloseConn(modH->newconns[modH->newconnIndex].conn);
+ 		    	 ModbusCloseConnNull(modH);
 
  		      }
 	      }
  	      else
  	      {
- 	    	 /*
- 	    	 netconn_close(modH->newconns[modH->newconnIndex].conn);
- 	    	 netconn_delete(modH->newconns[modH->newconnIndex].conn);
- 	    	 modH->newconns[modH->newconnIndex].conn = NULL;
- 	    	 */
- 	    	 ModbusCloseConn(modH->newconns[modH->newconnIndex].conn);
+ 	    	 //ModbusCloseConn(modH->newconns[modH->newconnIndex].conn);
+ 	    	 ModbusCloseConnNull(modH);
  	      }
      }
      else // send a query for USART and USB_CDC
@@ -1629,11 +1637,9 @@ if(modH->xTypeHW != TCP_HW)
     	  err = netconn_write_vectors_partly(modH->newconns[modH->newconnIndex].conn, xNetVectors, 2, NETCONN_COPY, &uBytesWritten);
     	  if (err != ERR_OK )
     	  {
-    		  /*
-    		  netconn_close(modH->newconns[modH->newconnIndex].conn);
-    		  netconn_delete(modH->newconns[modH->newconnIndex].conn);
-    		  modH->newconns[modH->newconnIndex].conn = NULL;*/
-    		  ModbusCloseConn(modH->newconns[modH->newconnIndex].conn);
+
+    		 // ModbusCloseConn(modH->newconns[modH->newconnIndex].conn);
+    		 ModbusCloseConnNull(modH);
 
     	  }
 

@@ -252,6 +252,7 @@ uint16_t calcCRC(uint8_t *Buffer, uint8_t u8length);
 
 #if ENABLE_TCP == 1
 void ModbusCloseConn(struct netconn *conn); //close the TCP connection
+void ModbusCloseConnNull(modbusHandler_t * modH); //close the TCP connection and cleans the modbus handler
 #endif
 
 
