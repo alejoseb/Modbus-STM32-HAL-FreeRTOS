@@ -6,7 +6,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
+  * <h2><center>&copy; Copyright (c) 2022 STMicroelectronics.
   * All rights reserved.</center></h2>
   *
   * This software component is licensed by ST under Ultimate Liberty license
@@ -62,13 +62,13 @@ osThreadAttr_t attributes;
 void MX_LWIP_Init(void)
 {
   /* IP addresses initialization */
-  IP_ADDRESS[0] = 192;
-  IP_ADDRESS[1] = 168;
-  IP_ADDRESS[2] = 0;
+  IP_ADDRESS[0] = 10;
+  IP_ADDRESS[1] = 75;
+  IP_ADDRESS[2] = 15;
   IP_ADDRESS[3] = 12;
   NETMASK_ADDRESS[0] = 255;
   NETMASK_ADDRESS[1] = 255;
-  NETMASK_ADDRESS[2] = 255;
+  NETMASK_ADDRESS[2] = 252;
   NETMASK_ADDRESS[3] = 0;
   GATEWAY_ADDRESS[0] = 0;
   GATEWAY_ADDRESS[1] = 0;
