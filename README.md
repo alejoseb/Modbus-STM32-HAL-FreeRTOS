@@ -9,7 +9,7 @@ NUCLEO-144 and Discovery Boards (Cortex-M3/M4/M7).
 
 This is a port of the Modbus library for Arduino: https://github.com/smarmengol/Modbus-Master-Slave-for-Arduino
 
-Video demo for STM32F4-dicovery board and TouchGFX: https://youtu.be/XDCQvu0LirY
+Video demo for STM32F4-discovery board and TouchGFX: https://youtu.be/XDCQvu0LirY
 
 `NEW` Script examples to test the library based on Pymodbus
 
