@@ -124,7 +124,7 @@ int main(void)
   ModbusUSB.EN_Port = NULL;
   ModbusUSB.u16regs = ModbusDATAusb;
   ModbusUSB.u16regsize= sizeof(ModbusDATAusb)/sizeof(ModbusDATAusb[0]);
-  ModbusH.xTypeHW = USART_HW;
+  ModbusUSB.xTypeHW = USART_HW;
   //Initialize Modbus library
   ModbusInit(&ModbusUSB);
   //Start capturing traffic on serial Port
