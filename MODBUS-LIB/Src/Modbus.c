@@ -15,6 +15,9 @@
 #include "timers.h"
 #include "semphr.h"
 
+
+
+
 #if ENABLE_TCP == 1
 #include "api.h"
 #include "ip4_addr.h"
@@ -34,6 +37,7 @@
 #define highByte(w) ((w) >> 8)
 
 
+modbusHandler_t *mHandlers[MAX_M_HANDLERS];
 
 
 ///Queue Modbus telegrams for master
