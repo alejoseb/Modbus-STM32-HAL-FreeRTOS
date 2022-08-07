@@ -1,4 +1,5 @@
-For Personal Use
+
+
 # Modbus library for STM32 Microcontrollers
 TCP, USART and USB-CDC Modbus RTU Master and Slave library for STM32 microcontrollers 
 based on Cube HAL and FreeRTOS.
@@ -45,7 +46,8 @@ Traditional Chinese: [繁體中文](TraditionalChineseREADME.md)
     ├── ModbusH743 --> NUCLEO-H743ZI Modbus Slave
     ├── ModbusH743TCP --> NUCLEO-H743ZI Modbus TCP
     ├── ModbusF303 --> NUCLEO-F303RE Modbus Slavee
-    ├── ModbusSTM32F4-discovery --> STM32F4-discovery TouchGFX + Modbus Master
+    ├── ModbusSTM32F4-Discovery --> STM32F4-discovery TouchGFX + Modbus Master
+    ├── ModbusSTM32F4-Discovery_Slave --> STM32F4-Discovery_Slave Modbus RTU UART Slave (Ported from NUCLEO-L152RE Modbus RTU DMA slave)
 ├── MODBUS-LIB --> Library Folder
     ├── Inc
     │   └── Modbus.h 
