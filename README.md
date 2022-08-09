@@ -58,7 +58,7 @@ Traditional Chinese: [繁體中文](TraditionalChineseREADME.md)
  
 ```
 ## How to use the examples
-Examples provided for STM32CubeIDE Version: 1.3.0 https://www.st.com/en/development-tools/stm32cubeide.html.
+Examples provided for STM32CubeIDE Version: 1.8.0 https://www.st.com/en/development-tools/stm32cubeide.html.
 
 - Import the examples in the STM32Cube IDE from the system folder
 - Connect your NUCLEO board
@@ -76,13 +76,14 @@ To use this example, you need to activate USB-CDC in your ModbusConfig.h file.
 - The TCP examples have been validated with NUCLEO F429ZI and H743ZI. 
 To use these examples, you need to activate TCP in your ModbusConfig.h file.
  
-- The HAL implementation for LWIP TCP of the CubeMX genrates code that might not work if the cable is not connected from the very beginning.
+- The HAL implementation for LWIP TCP of the CubeMX generates code that might not work if the cable is not connected from the very beginning.
 This is a known issue that can be solved manually changing the generated code as detailed here: https://community.st.com/s/question/0D50X0000CDolzDSQR/ethernet-does-not-work-if-uc-starts-with-the-cable-disconnected
 
 Check the TCP example for the NUCLEO F429, which includes the manual modifications. 
 
 ## How to port to your own MCU
-- Create a new project in STM32Cube IDE
+- Create a new project in STM32Cube IDE for your MCU
+- Enable FreeRTOS CMSIS_V2 in the middleware section of Cube-MX
 - Configure a USART and activate the global interrupt
 - If you are using the DMA mode for USART, configure the DMA requests for RX and TX
 - Configure the `Preemption priority` of USART interrupt to a lower priority (5 or a higher number for a standard configuration) than your FreeRTOS scheduler. This parameter is changed in the NVIC configuration pane.
