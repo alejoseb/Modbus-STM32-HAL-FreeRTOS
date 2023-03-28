@@ -112,6 +112,7 @@ Linux: https://sourceforge.net/projects/pymodslave/
 Windows: https://sourceforge.net/projects/modrssim2/
 
 ## TODOs:
+- Implement isolated memory spaces for coils, inputs and holding registers.
 - Implement wrapper functions for Master function codes. Currently, telegrams are defined manually. 
 - Improve function documentation
 - ~~MODBUS TCP implementation improvement to support multiple clients and TCP session management~~ (10/24/2021)
