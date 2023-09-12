@@ -55,7 +55,7 @@ const osThreadAttr_t myTaskModbusA_attributes = {
 const osThreadAttr_t myTaskModbusA_attributesTCP = {
     .name = "TaskModbusSlave",
     .priority = (osPriority_t) osPriorityNormal,
-    .stack_size = 256 * 4
+    .stack_size = 256 * 6
 };
 
 
