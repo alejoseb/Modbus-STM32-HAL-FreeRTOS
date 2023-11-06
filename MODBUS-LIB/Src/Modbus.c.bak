@@ -97,7 +97,6 @@ static void get_FC1(modbusHandler_t *modH);
 static void get_FC3(modbusHandler_t *modH);
 static int8_t process_FC1(modbusHandler_t *modH );
 static int8_t process_FC3(modbusHandler_t *modH );
-static int8_t process_FC4(modbusHandler_t *modH );
 static int8_t process_FC5( modbusHandler_t *modH);
 static int8_t process_FC6(modbusHandler_t *modH );
 static int8_t process_FC15(modbusHandler_t *modH );
@@ -738,11 +737,9 @@ void StartTaskModbusSlave(void *argument)
 			case MB_FC_READ_DISCRETE_INPUT:
 				modH->i8state = process_FC1(modH);
 				break;
+			case MB_FC_READ_INPUT_REGISTER:
 			case MB_FC_READ_REGISTERS :
 				modH->i8state = process_FC3(modH);
-				break;
-			case MB_FC_READ_INPUT_REGISTER:
-				modH->i8state = process_FC4(modH);
 				break;
 			case MB_FC_WRITE_COIL:
 				modH->i8state = process_FC5(modH);
@@ -1417,6 +1414,7 @@ uint8_t validateRequest(modbusHandler_t *modH)
 	        if (u16AdRegs > modH-> u16regsize) return EXC_ADDR_RANGE;
 	        break;
 	    case MB_FC_READ_REGISTERS :
+	    case MB_FC_READ_INPUT_REGISTER :
 	    case MB_FC_WRITE_MULTIPLE_REGISTERS :
 	    	u16AdRegs = word( modH->u8Buffer[ ADD_HI ], modH->u8Buffer[ ADD_LO ]);
 	        u16NRegs = word( modH->u8Buffer[ NB_HI ], modH->u8Buffer[ NB_LO ]);
@@ -1426,16 +1424,6 @@ uint8_t validateRequest(modbusHandler_t *modH)
 	        u16NRegs = u16NRegs*2 + 5; // adding the header  and CRC
 	        if ( u16NRegs > 256 ) return EXC_REGS_QUANT;
 	        break;
-	    case MB_FC_READ_INPUT_REGISTER :
-	    	u16AdRegs = word( modH->u8Buffer[ ADD_HI ], modH->u8Buffer[ ADD_LO ]);
-	        u16NRegs = word( modH->u8Buffer[ NB_HI ], modH->u8Buffer[ NB_LO ]);
-	        if (( u16AdRegs + u16NRegs ) > modH->u16regsize_input) return EXC_ADDR_RANGE;
-
-	        //verify answer frame size in bytes
-	        u16NRegs = u16NRegs*2 + 5; // adding the header  and CRC
-	        if ( u16NRegs > 256 ) return EXC_REGS_QUANT;
-	        break;
-
 	    }
 	    return 0; // OK, no exception code thrown
 
@@ -1736,7 +1724,7 @@ int8_t process_FC1(modbusHandler_t *modH )
 
 /**
  * @brief
- * This method processes function 3
+ * This method processes functions 3 & 4
  * This method reads a word array and transfers it to the master
  *
  * @return u8BufferSize Response to master length
@@ -1758,38 +1746,6 @@ int8_t process_FC3(modbusHandler_t *modH)
     	modH->u8Buffer[ modH->u8BufferSize ] = highByte(modH->u16regs[i]);
     	modH->u8BufferSize++;
     	modH->u8Buffer[ modH->u8BufferSize ] = lowByte(modH->u16regs[i]);
-    	modH->u8BufferSize++;
-    }
-    u8CopyBufferSize = modH->u8BufferSize +2;
-    sendTxBuffer(modH);
-
-    return u8CopyBufferSize;
-}
-
-/**
- * @brief
- * This method processes function 4
- * This method reads a word array and transfers it to the master
- *
- * @return u8BufferSize Response to master length
- * @ingroup register
- */
-int8_t process_FC4(modbusHandler_t *modH)
-{
-
-    uint16_t u16StartAdd = word( modH->u8Buffer[ ADD_HI ], modH->u8Buffer[ ADD_LO ] );
-    uint8_t u8regsno = word( modH->u8Buffer[ NB_HI ], modH->u8Buffer[ NB_LO ] );
-    uint8_t u8CopyBufferSize;
-    uint16_t i;
-
-    modH->u8Buffer[ 2 ]       = u8regsno * 2;
-    modH->u8BufferSize         = 3;
-
-    for (i = u16StartAdd; i < u16StartAdd + u8regsno; i++)
-    {
-    	modH->u8Buffer[ modH->u8BufferSize ] = highByte(modH->u16regs_input[i]);
-    	modH->u8BufferSize++;
-    	modH->u8Buffer[ modH->u8BufferSize ] = lowByte(modH->u16regs_input[i]);
     	modH->u8BufferSize++;
     }
     u8CopyBufferSize = modH->u8BufferSize +2;

@@ -183,11 +183,9 @@ typedef struct
 	uint8_t u8BufferSize;
 	uint8_t u8lastRec;
 	uint16_t *u16regs;
-	uint16_t *u16regs_input;
 	uint16_t u16InCnt, u16OutCnt, u16errCnt; //keep statistics of Modbus traffic
 	uint16_t u16timeOut;
 	uint16_t u16regsize;
-	uint16_t u16regsize_input;
 	uint8_t dataRX;
 	int8_t i8state;
 
