@@ -47,6 +47,7 @@ Traditional Chinese: [繁體中文](TraditionalChineseREADME.md)
     ├── ModbusH743TCP --> NUCLEO-H743ZI Modbus TCP
     ├── ModbusF303 --> NUCLEO-F303RE Modbus Slavee
     ├── ModbusSTM32F4-discovery --> STM32F4-discovery TouchGFX + Modbus Master
+    ├── ModbusWB55DMA --> P-NUCLEO-WB55 Modbus RTU DMA slave with RS485 
 ├── MODBUS-LIB --> Library Folder
     ├── Inc
     │   └── Modbus.h 
