@@ -1091,6 +1091,12 @@ void StartTaskModbusMaster(void *argument)
    	   ulNotificationValue = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
      }
 #else
+     /*Wait period of silence between modbus frame */
+	 if(modH->port->Init.BaudRate <= 19200)
+	 	osDelay((int)(35000/modH->port->Init.BaudRate) + 2);
+	 else
+	 	osDelay(3);
+
      // This is the case for implementations with only USART support
      SendQuery(modH, telegram);
      /* Block indefinitely until a Modbus Frame arrives or query timeouts*/
