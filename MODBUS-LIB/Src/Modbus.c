@@ -496,7 +496,7 @@ bool TCPwaitConnData(modbusHandler_t *modH)
 
   //select the next connection slot to work with using round-robin
   modH->newconnIndex++;
-  if (modH->newconnIndex>NUMBERTCPCONN)
+  if (modH->newconnIndex >= NUMBERTCPCONN)
   {
 	  modH->newconnIndex = 0;
   }
