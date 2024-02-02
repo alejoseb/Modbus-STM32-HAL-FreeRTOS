@@ -45,9 +45,12 @@ Traditional Chinese: [繁體中文](TraditionalChineseREADME.md)
     ├── ModbusL152DMA --> NUCLEO-L152RE Modbus RTU DMA slave
     ├── ModbusH743 --> NUCLEO-H743ZI Modbus Slave
     ├── ModbusH743TCP --> NUCLEO-H743ZI Modbus TCP
-    ├── ModbusF303 --> NUCLEO-F303RE Modbus Slavee
+    ├── ModbusF303 --> NUCLEO-F303RE Modbus Slave
     ├── ModbusSTM32F4-discovery --> STM32F4-discovery TouchGFX + Modbus Master
     ├── ModbusWB55DMA --> P-NUCLEO-WB55 Modbus RTU DMA slave with RS485 
+    ├── ModbusG070 --> NUCLEO-G070RB Modbus Slave
+├── Script
+    ├── *.ipynb --> various master and slave Jupyter notebooks for testing
 ├── MODBUS-LIB --> Library Folder
     ├── Inc
     │   └── Modbus.h 
