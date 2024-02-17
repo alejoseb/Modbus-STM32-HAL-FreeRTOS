@@ -47,14 +47,14 @@ typedef enum
  */
 typedef enum MB_FC
 {
-    MB_FC_READ_COILS               = 1,	 /*!< FCT=1 -> read coils or digital outputs */
-    MB_FC_READ_DISCRETE_INPUT      = 2,	 /*!< FCT=2 -> read digital inputs */
-    MB_FC_READ_REGISTERS           = 3,	 /*!< FCT=3 -> read registers or analog outputs */
-    MB_FC_READ_INPUT_REGISTER      = 4,	 /*!< FCT=4 -> read analog inputs */
-    MB_FC_WRITE_COIL               = 5,	 /*!< FCT=5 -> write single coil or output */
-    MB_FC_WRITE_REGISTER           = 6,	 /*!< FCT=6 -> write single register */
-    MB_FC_WRITE_MULTIPLE_COILS     = 15, /*!< FCT=15 -> write multiple coils or outputs */
-    MB_FC_WRITE_MULTIPLE_REGISTERS = 16	 /*!< FCT=16 -> write multiple registers */
+    MB_FC_READ_COILS               = 0x1,	 /*!< FCT=1 -> read coils or digital outputs */
+    MB_FC_READ_DISCRETE_INPUT      = 0x2,	 /*!< FCT=2 -> read digital inputs */
+    MB_FC_READ_REGISTERS           = 0x3,	 /*!< FCT=3 -> read registers or analog outputs */
+    MB_FC_READ_INPUT_REGISTER      = 0x4,	 /*!< FCT=4 -> read analog inputs */
+    MB_FC_WRITE_COIL               = 0x5,	 /*!< FCT=5 -> write single coil or output */
+    MB_FC_WRITE_REGISTER           = 0x6,	 /*!< FCT=6 -> write single register */
+    MB_FC_WRITE_MULTIPLE_COILS     = 0x15, /*!< FCT=15 -> write multiple coils or outputs */
+    MB_FC_WRITE_MULTIPLE_REGISTERS = 0x16	 /*!< FCT=16 -> write multiple registers */
 }mb_functioncode_t;
 
 
