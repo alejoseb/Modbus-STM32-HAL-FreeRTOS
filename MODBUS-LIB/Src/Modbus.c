@@ -699,7 +699,7 @@ void StartTaskModbusSlave(void *argument)
 
 
    // check slave id
-    if ( modH->u8Buffer[ID] !=  modH->u8id)
+    if ( modH->u8Buffer[ID] !=  modH->u8id && modH->u8Buffer[ID] != MODBUS_BROADCAST_ADDRESS)
 	{
 
 #if ENABLE_TCP == 0
@@ -1522,6 +1522,15 @@ extern uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len);
  */
 static void sendTxBuffer(modbusHandler_t *modH)
 {
+    // when in slaveType and slave id == MODBUS_BROADCAST_ADDRESS, do not send anything
+    if (modH->uModbusType == MB_SLAVE && modH->u8Buffer[ID] == MODBUS_BROADCAST_ADDRESS)
+    {
+        modH->u8BufferSize = 0;
+        // increase message counter
+        modH->u16OutCnt++;
+        return;
+    }
+
     // append CRC to message
 
 #if  ENABLE_TCP == 1
