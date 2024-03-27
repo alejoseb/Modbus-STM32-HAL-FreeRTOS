@@ -697,9 +697,15 @@ void StartTaskModbusSlave(void *argument)
 	  continue;
     }
 
+    //check broadcast mode
+    modH->u8AddressMode = ADDRESS_NORMAL;
+    if (modH->u8Buffer[ID] == ADDRESS_BROADCAST)
+    {
+        modH->u8AddressMode = ADDRESS_BROADCAST;
+    }
 
    // check slave id
-    if ( modH->u8Buffer[ID] !=  modH->u8id)
+    if ( modH->u8Buffer[ID] !=  modH->u8id && modH->u8AddressMode != ADDRESS_BROADCAST)
 	{
 
 #if ENABLE_TCP == 0
@@ -733,28 +739,38 @@ void StartTaskModbusSlave(void *argument)
 	 // process message
 	 switch(modH->u8Buffer[ FUNC ] )
 	 {
-			case MB_FC_READ_COILS:
-			case MB_FC_READ_DISCRETE_INPUT:
-				modH->i8state = process_FC1(modH);
+		case MB_FC_READ_COILS:
+		case MB_FC_READ_DISCRETE_INPUT:
+			if (modH->u8AddressMode == ADDRESS_BROADCAST)
+			{
+				/* broadcast mode should ignore read function */
 				break;
-			case MB_FC_READ_INPUT_REGISTER:
-			case MB_FC_READ_REGISTERS :
-				modH->i8state = process_FC3(modH);
+			}
+			modH->i8state = process_FC1(modH);
+			break;
+		case MB_FC_READ_INPUT_REGISTER:
+		case MB_FC_READ_REGISTERS :
+			if (modH->u8AddressMode == ADDRESS_BROADCAST)
+			{
+				/* broadcast mode should ignore read function */
 				break;
-			case MB_FC_WRITE_COIL:
-				modH->i8state = process_FC5(modH);
-				break;
-			case MB_FC_WRITE_REGISTER :
-				modH->i8state = process_FC6(modH);
-				break;
-			case MB_FC_WRITE_MULTIPLE_COILS:
-				modH->i8state = process_FC15(modH);
-				break;
-			case MB_FC_WRITE_MULTIPLE_REGISTERS :
-				modH->i8state = process_FC16(modH);
-				break;
-			default:
-				break;
+			}
+			modH->i8state = process_FC3(modH);
+			break;
+		case MB_FC_WRITE_COIL:
+			modH->i8state = process_FC5(modH);
+			break;
+		case MB_FC_WRITE_REGISTER :
+			modH->i8state = process_FC6(modH);
+			break;
+		case MB_FC_WRITE_MULTIPLE_COILS:
+			modH->i8state = process_FC15(modH);
+			break;
+		case MB_FC_WRITE_MULTIPLE_REGISTERS :
+			modH->i8state = process_FC16(modH);
+			break;
+		default:
+			break;
 	 }
 
 
@@ -1522,6 +1538,15 @@ extern uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len);
  */
 static void sendTxBuffer(modbusHandler_t *modH)
 {
+    // when in slaveType and u8AddressMode == ADDRESS_BROADCAST, do not send anything
+    if (modH->uModbusType == MB_SLAVE && modH->u8AddressMode == ADDRESS_BROADCAST)
+    {
+        modH->u8BufferSize = 0;
+        // increase message counter
+        modH->u16OutCnt++;
+        return;
+    }
+
     // append CRC to message
 
 #if  ENABLE_TCP == 1

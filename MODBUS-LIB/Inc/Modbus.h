@@ -34,7 +34,11 @@ typedef enum
     MB_MASTER = 4
 }mb_masterslave_t ;
 
-
+typedef enum
+{
+    ADDRESS_BROADCAST = 0,  //!< broadcast mode -> modH->u8Buffer[ID] == 0
+    ADDRESS_NORMAL = 1,     //!< normal mode -> modH->u8Buffer[ID] > 0
+}mb_address_t ;
 
 /**
  * @enum MB_FC
@@ -188,6 +192,8 @@ typedef struct
 	uint16_t u16regsize;
 	uint8_t dataRX;
 	int8_t i8state;
+
+    mb_address_t u8AddressMode; //!< 0=broadcast, 1..247=normal
 
 	//FreeRTOS components
 
