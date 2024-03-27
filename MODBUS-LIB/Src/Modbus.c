@@ -739,38 +739,38 @@ void StartTaskModbusSlave(void *argument)
 	 // process message
 	 switch(modH->u8Buffer[ FUNC ] )
 	 {
-			case MB_FC_READ_COILS:
-			case MB_FC_READ_DISCRETE_INPUT:
-                if (modH->u8AddressMode == ADDRESS_BROADCAST)
-                {
-                    /* broadcast mode should ignore read function */
-                    break;
-                }
-				modH->i8state = process_FC1(modH);
-				break;
-			case MB_FC_READ_INPUT_REGISTER:
-			case MB_FC_READ_REGISTERS :
-                if (modH->u8AddressMode == ADDRESS_BROADCAST)
-                {
-                    /* broadcast mode should ignore read function */
-                    break;
-                }
-				modH->i8state = process_FC3(modH);
-				break;
-			case MB_FC_WRITE_COIL:
-				modH->i8state = process_FC5(modH);
-				break;
-			case MB_FC_WRITE_REGISTER :
-				modH->i8state = process_FC6(modH);
-				break;
-			case MB_FC_WRITE_MULTIPLE_COILS:
-				modH->i8state = process_FC15(modH);
-				break;
-			case MB_FC_WRITE_MULTIPLE_REGISTERS :
-				modH->i8state = process_FC16(modH);
-				break;
-			default:
-				break;
+		case MB_FC_READ_COILS:
+		case MB_FC_READ_DISCRETE_INPUT:
+			if (modH->u8AddressMode == ADDRESS_BROADCAST)
+			{
+			/* broadcast mode should ignore read function */
+				 break;
+			}
+			modH->i8state = process_FC1(modH);
+			break;
+		case MB_FC_READ_INPUT_REGISTER:
+		case MB_FC_READ_REGISTERS :
+			if (modH->u8AddressMode == ADDRESS_BROADCAST)
+			{
+			/* broadcast mode should ignore read function */
+			break;
+			}
+			modH->i8state = process_FC3(modH);
+			break;
+		case MB_FC_WRITE_COIL:
+			modH->i8state = process_FC5(modH);
+			break;
+		case MB_FC_WRITE_REGISTER :
+			modH->i8state = process_FC6(modH);
+			break;
+		case MB_FC_WRITE_MULTIPLE_COILS:
+			modH->i8state = process_FC15(modH);
+			break;
+		case MB_FC_WRITE_MULTIPLE_REGISTERS :
+			modH->i8state = process_FC16(modH);
+			break;
+		default:
+			break;
 	 }
 
 
