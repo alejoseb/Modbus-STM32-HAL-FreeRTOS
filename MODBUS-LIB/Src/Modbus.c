@@ -743,8 +743,8 @@ void StartTaskModbusSlave(void *argument)
 		case MB_FC_READ_DISCRETE_INPUT:
 			if (modH->u8AddressMode == ADDRESS_BROADCAST)
 			{
-			/* broadcast mode should ignore read function */
-				 break;
+				/* broadcast mode should ignore read function */
+				break;
 			}
 			modH->i8state = process_FC1(modH);
 			break;
@@ -752,8 +752,8 @@ void StartTaskModbusSlave(void *argument)
 		case MB_FC_READ_REGISTERS :
 			if (modH->u8AddressMode == ADDRESS_BROADCAST)
 			{
-			/* broadcast mode should ignore read function */
-			break;
+				/* broadcast mode should ignore read function */
+				break;
 			}
 			modH->i8state = process_FC3(modH);
 			break;
