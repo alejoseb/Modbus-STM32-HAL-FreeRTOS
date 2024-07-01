@@ -1600,7 +1600,7 @@ if(modH->xTypeHW != TCP_HW)
 * USART datasheet and add the corresponding family in the following
 * preprocessor conditions
 */
-#if defined(STM32H7)  || defined(STM32F3) || defined(STM32L4) || defined(STM32L082xx) || defined(STM32F7) || defined(STM32WB) || defined(STM32G070xx) || defined(STM32F0) || defined(STM32G431xx)
+#if defined(STM32H7)  || defined(STM32F3) || defined(STM32L4) || defined(STM32L082xx) || defined(STM32F7) || defined(STM32WB) || defined(STM32G070xx) || defined(STM32F0) || defined(STM32G431xx) || defined(STM32H5)
           while((modH->port->Instance->ISR & USART_ISR_TC) ==0 )
 #else
           // F429, F103, L152 ...
