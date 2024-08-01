@@ -50,6 +50,8 @@ Traditional Chinese: [繁體中文](TraditionalChineseREADME.md)
     ├── ModbusWB55DMA --> P-NUCLEO-WB55 Modbus RTU DMA slave with RS485 
     ├── ModbusG070 --> NUCLEO-G070RB Modbus Slave
     ├── ModbusF030 --> STM32F030RCT6 USART Slave
+    ├── ModbusH503 --> STM32H503RBTx USART Slave
+    ├── ModbusG431 --> NUCLEO-G431KB USART Slave
 ├── Script
     ├── *.ipynb --> various master and slave Jupyter notebooks for testing
 ├── MODBUS-LIB --> Library Folder
