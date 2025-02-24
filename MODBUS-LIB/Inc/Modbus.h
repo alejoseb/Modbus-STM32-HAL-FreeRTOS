@@ -97,21 +97,31 @@ typedef enum COM_STATES
 
 }mb_com_state_t;
 
-typedef enum ERR_LIST
+typedef enum ERR_OP_LIST
 {
-    ERR_NOT_MASTER                = -1,
-    ERR_POLLING                   = -2,
-    ERR_BUFF_OVERFLOW             = -3,
-    ERR_BAD_CRC                   = -4,
-    ERR_EXCEPTION                 = -5,
-    ERR_BAD_SIZE                  = -6,
-    ERR_BAD_ADDRESS               = -7,
-    ERR_TIME_OUT		          = -8,
-    ERR_BAD_SLAVE_ID		      = -9,
-	ERR_BAD_TCP_ID		          = -10,
-	ERR_OK_QUERY				  = -11
+    // Errors
+	ERR_NOT_MASTER                = 10,
+    ERR_POLLING                   = 11,
+    ERR_BUFF_OVERFLOW             = 12,
+    ERR_BAD_CRC                   = 13,
+    ERR_EXCEPTION                 = 14,
+    ERR_BAD_SIZE                  = 15,
+    ERR_BAD_ADDRESS               = 16,
+    ERR_TIME_OUT		          = 17,
+    ERR_BAD_SLAVE_ID		      = 18,
+	ERR_BAD_TCP_ID		          = 19,
+	// Operations
+	OP_OK_QUERY				      = 20  // this value is not an error, it is a number different than zero to acknowledge a correct operation,
+                                        // which is needed because FreeRTOS notifications return zero on timeout.
+	                                    // Therefore we define our own Error and Operation codes and keep zero exclusively for FreeRTOS primitives
+}mb_err_op_t;
 
-}mb_errot_t;
+
+
+
+
+
+
 
 enum
 {
@@ -182,7 +192,7 @@ typedef struct
 	uint8_t u8id; //!< 0=master, 1..247=slave number
 	GPIO_TypeDef* EN_Port; //!< flow control pin: 0=USB or RS-232 mode, >1=RS-485 mode
 	uint16_t EN_Pin;  //!< flow control pin: 0=USB or RS-232 mode, >1=RS-485 mode
-	mb_errot_t i8lastError;
+	mb_err_op_t i8lastError;
 	uint8_t u8Buffer[MAX_BUFFER]; //Modbus buffer for communication
 	uint8_t u8BufferSize;
 	uint8_t u8lastRec;
@@ -251,6 +261,7 @@ void setTimeOut( uint16_t u16timeOut); //!<write communication watch-dog timer
 uint16_t getTimeOut(); //!<get communication watch-dog timer value
 bool getTimeOutState(); //!<get communication watch-dog timer state
 void ModbusQuery(modbusHandler_t * modH, modbus_t telegram ); // put a query in the queue tail
+uint32_t ModbusQueryV2(modbusHandler_t * modH, modbus_t telegram ); // put a query in the queue tail and waits for the notification
 void ModbusQueryInject(modbusHandler_t * modH, modbus_t telegram); //put a query in the queue head
 void StartTaskModbusSlave(void *argument); //slave
 void StartTaskModbusMaster(void *argument); //master

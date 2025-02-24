@@ -57,7 +57,7 @@ const osThreadAttr_t defaultTask_attributes = {
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
-
+modbus_t telegram[2];
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
@@ -115,11 +115,30 @@ void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
   /* Infinite loop */
-  uint16_t delayCount = 0;
+	uint32_t u32NotificationValue;
+	telegram[0].u8id = 1; // slave address
+	telegram[0].u8fct = MB_FC_WRITE_REGISTER; // function code (this one is registers read)
+	telegram[0].u16RegAdd = 0x0; // start address in slave
+	telegram[0].u16CoilsNo = 1; // number of elements (coils or registers) to read
+	telegram[0].u16reg = ModbusDATA; // pointer to a memory array
+
+    telegram[1].u8id = 1; // slave address
+	telegram[1].u8fct = MB_FC_READ_REGISTERS; // function code (this one is registers read)
+	telegram[1].u16RegAdd = 0x0; // start address in slave
+	telegram[1].u16CoilsNo = 1; // number of elements (coils or registers) to read
+	telegram[1].u16reg = ModbusDATA; // pointer to a memory array
+	ModbusDATA[0] =1;
+
+
+
+
+  uint16_t delayCount = 1000;
   /* Infinite loop */
   for(;;)
   {
-		HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+		/*   this section is for the slave example
+
+	    HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
 
 		if (ModbusDATA[0])
 		{
@@ -131,6 +150,38 @@ void StartDefaultTask(void *argument)
 		}
 
 		osDelay(delayCount);
+
+		*/
+
+		/* this section is for the master section */
+
+
+	 	//ModbusQuery(&ModbusH, telegram[1]); // make a query
+	 	//u32NotificationValue = ulTaskNotifyTake(pdTRUE, portMAX_DELAY ); // block until query finishes
+
+	  u32NotificationValue = ModbusQueryV2(&ModbusH, telegram[1]); // make a query with the new function ModbusQueryV2 prototype
+	    if(u32NotificationValue != OP_OK_QUERY )
+	 	{
+	 	  		//handle error
+	 	  		//  while(1);
+	 		u32NotificationValue = 0;
+	 	}
+
+
+
+	 	osDelay(delayCount);
+
+	 	ModbusDATA[0] = ModbusDATA[0] + 1;
+	 	ModbusQuery(&ModbusH, telegram[0]); // make a query with old function
+	 	u32NotificationValue = ulTaskNotifyTake(pdTRUE, portMAX_DELAY ); // block until query finishes this is embedded in V2
+        if(u32NotificationValue != OP_OK_QUERY)
+	 	{
+	 	  		//handle error
+	 	   	  	//  while(1);
+        	u32NotificationValue = 0;
+	 	}
+
+
   }
 
 

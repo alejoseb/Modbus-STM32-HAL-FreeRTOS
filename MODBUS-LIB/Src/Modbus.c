@@ -797,6 +797,23 @@ void ModbusQuery(modbusHandler_t * modH, modbus_t telegram )
 	}
 }
 
+uint32_t ModbusQueryV2(modbusHandler_t * modH, modbus_t telegram )
+{
+	//Add the telegram to the TX tail Queue of Modbus
+	if (modH->uModbusType == MB_MASTER)
+	{
+	telegram.u32CurrentTask = (uint32_t *) osThreadGetId();
+	xQueueSendToBack(modH->QueueTelegramHandle, &telegram, 0);
+
+	return ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+	}
+	else{
+		while(1);// error a slave cannot send queries as a master
+	}
+}
+
+
 
 
 void ModbusQueryInject(modbusHandler_t * modH, modbus_t telegram )
@@ -1194,10 +1211,10 @@ void StartTaskModbusMaster(void *argument)
 	  }
 	  modH->i8state = COM_IDLE;
 
-	  if (modH->i8lastError ==0) // no error the error_OK, we need to use a different value than 0 to detect the timeout
+	  if (modH->i8lastError ==0) // no error, we use OP_OK_QUERY, since we need to use a different value than 0 to detect the timeout
 	  {
 		  xSemaphoreGive(modH->ModBusSphrHandle); //Release the semaphore
-		  xTaskNotify((TaskHandle_t)telegram.u32CurrentTask, ERR_OK_QUERY, eSetValueWithOverwrite);
+		  xTaskNotify((TaskHandle_t)telegram.u32CurrentTask, OP_OK_QUERY, eSetValueWithOverwrite);
 	  }
 
 
@@ -1429,11 +1446,11 @@ uint8_t validateRequest(modbusHandler_t *modH)
 	    case MB_FC_WRITE_COIL:
 	    	u16AdRegs = word( modH->u8Buffer[ ADD_HI ], modH->u8Buffer[ ADD_LO ]) / 16;
 	    	if(word( modH->u8Buffer[ ADD_HI ], modH->u8Buffer[ ADD_LO ]) % 16) u16AdRegs++;	// check for incomplete words
-	        if (u16AdRegs > modH->u16regsize) return EXC_ADDR_RANGE;
+	        if (u16AdRegs >= modH->u16regsize) return EXC_ADDR_RANGE;
 	        break;
 	    case MB_FC_WRITE_REGISTER :
 	    	u16AdRegs = word( modH->u8Buffer[ ADD_HI ], modH->u8Buffer[ ADD_LO ]);
-	        if (u16AdRegs > modH-> u16regsize) return EXC_ADDR_RANGE;
+	        if (u16AdRegs >= modH-> u16regsize) return EXC_ADDR_RANGE;
 	        break;
 	    case MB_FC_READ_REGISTERS :
 	    case MB_FC_READ_INPUT_REGISTER :
