@@ -1,3 +1,8 @@
+# Sponsoring
+
+If you found this library useful or if you have used it in a commercial product, please consider supporting my work
+<iframe src="https://github.com/sponsors/alejoseb/button" title="Sponsor alejoseb" height="32" width="114" style="border: 0; border-radius: 6px;"></iframe>
+I also provide consultations at different sponsoring tiers, thanks!
 
 
 # Modbus library for STM32 Microcontrollers
