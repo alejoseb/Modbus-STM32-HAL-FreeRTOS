@@ -1,6 +1,12 @@
 # Sponsoring
 
-If you found this library useful or if you have used it in a commercial product, please consider supporting my work ([sponsor](https://github.com/sponsors/alejoseb)).
+If you found this library useful or if you have used it in a commercial product, please consider supporting my work 
+or buy me a coffee: 
+
+[:heart: sponsor](https://github.com/sponsors/alejoseb) 
+
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/alejoseb)
+
 I also provide consultations at different sponsoring tiers, thanks!
 
 
