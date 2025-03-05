@@ -7,7 +7,7 @@ or buy me a coffee:
 
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/alejoseb)
 
-[!["Paypal"](https://github.com/alejoseb/Modbus-STM32-HAL-FreeRTOS/blob/master/.github/paypal.png)](https://www.paypal.com/donate/?business=ADTEDK5JHVZ22&no_recurring=0&item_name=I+have+contributed+libraries+for+embedded.+If+you+find+any+of+my+open-source+projects+useful+please+consider+supporting+me.%0A&currency_code=USD) Paypal
+[!["Paypal"](https://github.com/alejoseb/Modbus-STM32-HAL-FreeRTOS/blob/master/.github/paypal.png)](https://www.paypal.com/donate/?business=ADTEDK5JHVZ22&no_recurring=0&item_name=I+have+contributed+libraries+for+embedded.+If+you+find+any+of+my+open-source+projects+useful+please+consider+supporting+me.%0A&currency_code=USD)[Paypal](https://www.paypal.com/donate/?business=ADTEDK5JHVZ22&no_recurring=0&item_name=I+have+contributed+libraries+for+embedded.+If+you+find+any+of+my+open-source+projects+useful+please+consider+supporting+me.%0A&currency_code=USD)
 
 I also provide consultations at different sponsoring tiers, thanks!
 
