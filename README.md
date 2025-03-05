@@ -1,7 +1,7 @@
 # Sponsoring
 
 If you found this library useful or if you have used it in a commercial product, please consider supporting my work 
-or buy me a coffee: 
+or buying me a coffee: 
 
 [:heart: sponsor](https://github.com/sponsors/alejoseb) 
 
