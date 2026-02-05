@@ -114,7 +114,11 @@ Check the TCP example for the NUCLEO F429, which includes the manual modificatio
 - `Note:` If your project uses the USART interrupt service for other purposes you have to modify the UARTCallback.c file accordingly
 
 
-## Recommended Modbus Master and Slave testing tools for Linux and Windows
+## Recommended Modbus Master and Slave testing and development tools for Linux and Windows
+
+### NEW MCP server exposing a Modbus Master for agents and AI assisted development
+https://github.com/alejoseb/ModbusMCP
+
 
 ### Master and slave Python library
 
