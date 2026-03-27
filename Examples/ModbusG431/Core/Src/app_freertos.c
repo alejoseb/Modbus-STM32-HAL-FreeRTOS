@@ -115,6 +115,7 @@ void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
   /* Infinite loop */
+	/*
 	uint32_t u32NotificationValue;
 	telegram[0].u8id = 1; // slave address
 	telegram[0].u8fct = MB_FC_WRITE_REGISTER; // function code (this one is registers read)
@@ -128,7 +129,7 @@ void StartDefaultTask(void *argument)
 	telegram[1].u16CoilsNo = 1; // number of elements (coils or registers) to read
 	telegram[1].u16reg = ModbusDATA; // pointer to a memory array
 	ModbusDATA[0] =1;
-
+*/
 
 
 
@@ -136,10 +137,10 @@ void StartDefaultTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-		/*   this section is for the slave example
+		/*   this section is for the slave example 	*/
 
 	    HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-
+/*
 		if (ModbusDATA[0])
 		{
 			delayCount = ModbusDATA[0];
@@ -147,11 +148,11 @@ void StartDefaultTask(void *argument)
 		else
 		{
 			delayCount = 250;
-		}
+		}*/
 
 		osDelay(delayCount);
 
-		*/
+
 
 		/* this section is for the master section */
 
@@ -159,6 +160,7 @@ void StartDefaultTask(void *argument)
 	 	//ModbusQuery(&ModbusH, telegram[1]); // make a query
 	 	//u32NotificationValue = ulTaskNotifyTake(pdTRUE, portMAX_DELAY ); // block until query finishes
 
+	  /*
 	  u32NotificationValue = ModbusQueryV2(&ModbusH, telegram[1]); // make a query with the new function ModbusQueryV2 prototype
 	    if(u32NotificationValue != OP_OK_QUERY )
 	 	{
@@ -180,7 +182,7 @@ void StartDefaultTask(void *argument)
 	 	   	  	//  while(1);
         	u32NotificationValue = 0;
 	 	}
-
+*/
 
   }
 

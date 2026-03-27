@@ -196,10 +196,33 @@ typedef struct
 	uint8_t u8Buffer[MAX_BUFFER]; //Modbus buffer for communication
 	uint8_t u8BufferSize;
 	uint8_t u8lastRec;
-	uint16_t *u16regs;
+	uint16_t *u16regs;       /*!< Shared register/coil memory (legacy, all FCs share this) */
 	uint16_t u16InCnt, u16OutCnt, u16errCnt; //keep statistics of Modbus traffic
 	uint16_t u16timeOut;
-	uint16_t u16regsize;
+	uint16_t u16regsize;     /*!< Number of uint16_t words in u16regs */
+
+	/* Separate memory regions (optional).
+	 * When a region pointer is non-NULL it is used for the corresponding
+	 * function codes instead of the shared u16regs array, enabling
+	 * independent physical memory and configurable starting addresses.
+	 * When NULL, the library falls back to u16regs with startAddress = 0,
+	 * preserving full backward compatibility. */
+
+	uint16_t *u16coils;             /*!< Coils memory (bit-packed). Used by FC1, FC5, FC15 */
+	uint16_t u16coilsStartAdd;      /*!< First valid Modbus coil address (default 0) */
+	uint16_t u16coilsNregs;         /*!< Number of uint16_t words in u16coils (each holds 16 coils) */
+
+	uint16_t *u16discreteInputs;    /*!< Discrete inputs memory (bit-packed). Used by FC2 */
+	uint16_t u16discreteInputsStartAdd;  /*!< First valid Modbus discrete-input address (default 0) */
+	uint16_t u16discreteInputsNregs;     /*!< Number of uint16_t words in u16discreteInputs */
+
+	uint16_t *u16inputRegs;         /*!< Input registers memory. Used by FC4 */
+	uint16_t u16inputRegsStartAdd;  /*!< First valid Modbus input-register address (default 0) */
+	uint16_t u16inputRegsNregs;     /*!< Number of uint16_t words in u16inputRegs */
+
+	uint16_t *u16holdingRegs;       /*!< Holding registers memory. Used by FC3, FC6, FC16 */
+	uint16_t u16holdingRegsStartAdd; /*!< First valid Modbus holding-register address (default 0) */
+	uint16_t u16holdingRegsNregs;   /*!< Number of uint16_t words in u16holdingRegs */
 	uint8_t dataRX;
 	int8_t i8state;
 

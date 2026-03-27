@@ -23,6 +23,8 @@ This is a port of the Modbus library for Arduino: https://github.com/smarmengol/
 
 Video demo for STM32F4-discovery board and TouchGFX: https://youtu.be/XDCQvu0LirY
 
+`NEW` Separate memory regions per data type with configurable start addresses, while remaining fully backward-compatible with the legacy shared memory model
+
 `NEW` Script examples to test the library based on Pymodbus
 
 `NEW` TCP slave (server) multi-client with configurable auto-aging algorithm for management of TCP connections
@@ -37,6 +39,7 @@ Traditional Chinese: [繁體中文](TraditionalChineseREADME.md)
 - Multithread-safe implementation based on FreeRTOS. 
 - Multiple instances of Modbus (Master and/or Slave) can run concurrently in the same MCU,
   only limited by the number of available UART/USART of the MCU.
+- Flexible memory model: shared memory space (legacy) or separate independent memory regions per data type with configurable Modbus start addresses.
 - RS232 and RS485 compatible.
 - USART DMA support for high baudrates with idle-line detection.
 - USB-CDC RTU master and Slave support for F103 Bluepill board. 
@@ -114,6 +117,72 @@ Check the TCP example for the NUCLEO F429, which includes the manual modificatio
 - `Note:` If your project uses the USART interrupt service for other purposes you have to modify the UARTCallback.c file accordingly
 
 
+## Slave Memory Configuration
+
+The library supports two memory models for the slave. Both are configured in `main.c` (or equivalent application file).
+
+### Option 1 — Shared memory (legacy, backward-compatible)
+
+All function codes (FC1/2/3/4/5/6/15/16) share a single `uint16_t` array. Coil addresses map to bits of the array; register addresses map to words. This is the default mode and requires no changes to existing code.
+
+```c
+uint16_t ModbusDATA[8]; // shared by all function codes
+
+ModbusH.uModbusType = MB_SLAVE;
+ModbusH.port        = &huart2;
+ModbusH.u8id        = 1;
+ModbusH.u16timeOut  = 1000;
+ModbusH.EN_Port     = NULL;
+ModbusH.u16regs     = ModbusDATA;
+ModbusH.u16regsize  = sizeof(ModbusDATA) / sizeof(ModbusDATA[0]);
+ModbusH.xTypeHW     = USART_HW;
+```
+
+### Option 2 — Separate memory regions with configurable start addresses
+
+Each data type has its own independent `uint16_t` array and its own Modbus start address. This enables standard Modbus address mapping (e.g. coils at 0, discrete inputs at 10001, holding registers at 40001) or any custom partitioning. When any of the region pointers is set, that function code uses the dedicated region instead of `u16regs`.
+
+```c
+// Independent arrays per data type
+uint16_t CoilsDATA[2];     // 32 coils,  Modbus addresses   0 –  31
+uint16_t DiDATA[2];        // 32 DI,     Modbus addresses 100 – 131
+uint16_t HoldingDATA[4];   // 4 HR,      Modbus addresses 200 – 203
+uint16_t InputDATA[4];     // 4 IR,      Modbus addresses 300 – 303
+
+ModbusH.uModbusType = MB_SLAVE;
+ModbusH.port        = &huart2;
+ModbusH.u8id        = 1;
+ModbusH.u16timeOut  = 1000;
+ModbusH.EN_Port     = NULL;
+ModbusH.u16regs     = NULL;  // not used when separate regions are configured
+ModbusH.u16regsize  = 0;
+ModbusH.xTypeHW     = USART_HW;
+
+// Coils — FC1, FC5, FC15
+ModbusH.u16coils            = CoilsDATA;
+ModbusH.u16coilsStartAdd    = 0;
+ModbusH.u16coilsNregs       = 2;
+
+// Discrete Inputs — FC2
+ModbusH.u16discreteInputs          = DiDATA;
+ModbusH.u16discreteInputsStartAdd  = 100;
+ModbusH.u16discreteInputsNregs     = 2;
+
+// Holding Registers — FC3, FC6, FC16
+ModbusH.u16holdingRegs          = HoldingDATA;
+ModbusH.u16holdingRegsStartAdd  = 200;
+ModbusH.u16holdingRegsNregs     = 4;
+
+// Input Registers — FC4
+ModbusH.u16inputRegs          = InputDATA;
+ModbusH.u16inputRegsStartAdd  = 300;
+ModbusH.u16inputRegsNregs     = 4;
+```
+
+With separate regions each block type responds only to its own address range and returns exception code 2 (Illegal Data Address) for any address outside it. Memory is fully isolated between blocks.
+
+A fully working example using separate memory regions is available under `Examples/ModbusG431` (NUCLEO-G431KB).
+
 ## Recommended Modbus Master and Slave testing and development tools for Linux and Windows
 
 ### NEW MCP server exposing a Modbus Master for agents and AI assisted development
@@ -135,7 +204,7 @@ Linux: https://sourceforge.net/projects/pymodslave/
 Windows: https://sourceforge.net/projects/modrssim2/
 
 ## TODOs:
-- Implement isolated memory spaces for coils, inputs and holding registers.
+- ~~Implement isolated memory spaces for coils, inputs and holding registers.~~ Separate memory regions with configurable start addresses implemented and backward-compatible with legacy shared memory model.
 - Implement wrapper functions for Master function codes. Currently, telegrams are defined manually. 
 - Improve function documentation
 - ~~MODBUS TCP implementation improvement to support multiple clients and TCP session management~~ (10/24/2021)

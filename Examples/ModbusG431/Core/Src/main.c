@@ -30,7 +30,14 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 modbusHandler_t ModbusH;
-uint16_t ModbusDATA[8];
+//uint16_t ModbusDATA[8];
+
+// Separate memory arrays per block type
+uint16_t CoilsDATA[2];        // 32 coils,  addresses   0 –  31
+uint16_t DiDATA[2];           // 32 DI,     addresses 100 – 131
+uint16_t HoldingDATA[4];      // 4 HR,      addresses 200 – 203
+uint16_t InputDATA[4];        // 4 IR,      addresses 300 – 303
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -92,15 +99,37 @@ int main(void)
   MX_GPIO_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
-  ModbusH.uModbusType = MB_MASTER;
-  ModbusH.port =  &huart2;
-  ModbusH.u8id = 0; //Modbus slave ID
-  ModbusH.u16timeOut = 1000;
-  ModbusH.EN_Port = NULL;
-  ModbusH.u16regs = ModbusDATA;
-  ModbusH.u16regsize= sizeof(ModbusDATA)/sizeof(ModbusDATA[0]);
-  ModbusH.xTypeHW = USART_HW;
+
   //Initialize Modbus library
+  ModbusH.uModbusType  = MB_SLAVE;
+  ModbusH.port         = &huart2;
+  ModbusH.u8id         = 1;
+  ModbusH.u16timeOut   = 1000;
+  ModbusH.EN_Port      = NULL;
+  ModbusH.u16regs      = NULL;   // not used — separate regions active
+  ModbusH.u16regsize   = 0;
+  ModbusH.xTypeHW      = USART_HW;
+
+  // Coils — FC1, FC5, FC15
+  ModbusH.u16coils            = CoilsDATA;
+  ModbusH.u16coilsStartAdd    = 0;
+  ModbusH.u16coilsNregs       = 2;   // 32 coils
+
+  // Discrete Inputs — FC2
+  ModbusH.u16discreteInputs           = DiDATA;
+  ModbusH.u16discreteInputsStartAdd   = 100;
+  ModbusH.u16discreteInputsNregs      = 2;   // 32 DI
+
+  // Holding Registers — FC3, FC6, FC16
+  ModbusH.u16holdingRegs          = HoldingDATA;
+  ModbusH.u16holdingRegsStartAdd  = 200;
+  ModbusH.u16holdingRegsNregs     = 4;
+
+  // Input Registers — FC4
+  ModbusH.u16inputRegs            = InputDATA;
+  ModbusH.u16inputRegsStartAdd    = 300;
+  ModbusH.u16inputRegsNregs       = 4;
+
   ModbusInit(&ModbusH);
   //Start capturing traffic on serial Port
   ModbusStart(&ModbusH);

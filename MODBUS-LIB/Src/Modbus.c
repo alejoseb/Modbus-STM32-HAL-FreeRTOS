@@ -106,6 +106,18 @@ static void vTimerCallbackTimeout(TimerHandle_t *pxTimer);
 //static int16_t getRxBuffer(modbusHandler_t *modH);
 static int8_t SendQuery(modbusHandler_t *modH ,  modbus_t telegram);
 
+/* Internal type that describes a single Modbus memory region */
+typedef struct {
+    uint16_t *data;         /* pointer to the uint16_t register/coil array */
+    uint16_t startAddress;  /* first valid Modbus address in this region     */
+    uint16_t size;          /* number of uint16_t words in data[]            */
+} mb_region_t;
+
+static mb_region_t getCoilsRegion(modbusHandler_t *modH);
+static mb_region_t getDIRegion(modbusHandler_t *modH);
+static mb_region_t getHRRegion(modbusHandler_t *modH);
+static mb_region_t getIRRegion(modbusHandler_t *modH);
+
 #if ENABLE_TCP ==1
 
 static bool TCPwaitConnData(modbusHandler_t *modH);
@@ -119,7 +131,13 @@ static mb_errot_t TCPgetRxBuffer(modbusHandler_t * modH);
 
 
 /* Ring Buffer functions */
-// This function must be called only after disabling USART RX interrupt or inside of the RX interrupt
+
+/**
+ * @brief Appends one byte to the ring buffer.
+ * Must be called with the USART RX interrupt disabled or from within the RX ISR.
+ * @param xRingBuffer  Pointer to the ring buffer
+ * @param u8Val        Byte to append
+ */
 void RingAdd(modbusRingBuffer_t *xRingBuffer, uint8_t u8Val)
 {
 
@@ -138,13 +156,26 @@ void RingAdd(modbusRingBuffer_t *xRingBuffer, uint8_t u8Val)
 
 }
 
-// This function must be called only after disabling USART RX interrupt
+/**
+ * @brief Reads all available bytes from the ring buffer into a flat buffer.
+ * Must be called with the USART RX interrupt disabled.
+ * @param xRingBuffer  Pointer to the ring buffer
+ * @param buffer       Destination byte array (must be at least MAX_BUFFER bytes)
+ * @return Number of bytes copied
+ */
 uint8_t RingGetAllBytes(modbusRingBuffer_t *xRingBuffer, uint8_t *buffer)
 {
 	return RingGetNBytes(xRingBuffer, buffer, xRingBuffer->u8available);
 }
 
-// This function must be called only after disabling USART RX interrupt
+/**
+ * @brief Reads up to uNumber bytes from the ring buffer into a flat buffer.
+ * Must be called with the USART RX interrupt disabled.
+ * @param xRingBuffer  Pointer to the ring buffer
+ * @param buffer       Destination byte array
+ * @param uNumber      Maximum number of bytes to read
+ * @return Number of bytes actually copied
+ */
 uint8_t RingGetNBytes(modbusRingBuffer_t *xRingBuffer, uint8_t *buffer, uint8_t uNumber)
 {
 	uint8_t uCounter;
@@ -163,11 +194,20 @@ uint8_t RingGetNBytes(modbusRingBuffer_t *xRingBuffer, uint8_t *buffer, uint8_t 
 	return uCounter;
 }
 
+/**
+ * @brief Returns the number of bytes currently available in the ring buffer.
+ * @param xRingBuffer  Pointer to the ring buffer
+ * @return Number of available bytes
+ */
 uint8_t RingCountBytes(modbusRingBuffer_t *xRingBuffer)
 {
 return xRingBuffer->u8available;
 }
 
+/**
+ * @brief Resets the ring buffer to its empty state.
+ * @param xRingBuffer  Pointer to the ring buffer
+ */
 void RingClear(modbusRingBuffer_t *xRingBuffer)
 {
 xRingBuffer->u8start = 0;
@@ -178,6 +218,77 @@ xRingBuffer->overflow = false;
 
 /* End of Ring Buffer functions */
 
+
+/* ---------------------------------------------------------------------------
+ * Memory region helpers
+ * Each function returns the mb_region_t that should be used for a given data
+ * type.  When the user has configured a dedicated separate array for that type
+ * (non-NULL pointer), that region is returned.  Otherwise the legacy shared
+ * u16regs array is returned with startAddress = 0, which preserves the
+ * original single-memory-space behaviour.
+ * -------------------------------------------------------------------------*/
+
+static mb_region_t getCoilsRegion(modbusHandler_t *modH)
+{
+    mb_region_t region;
+    if (modH->u16coils != NULL) {
+        region.data         = modH->u16coils;
+        region.startAddress = modH->u16coilsStartAdd;
+        region.size         = modH->u16coilsNregs;
+    } else {
+        region.data         = modH->u16regs;
+        region.startAddress = 0;
+        region.size         = modH->u16regsize;
+    }
+    return region;
+}
+
+static mb_region_t getDIRegion(modbusHandler_t *modH)
+{
+    mb_region_t region;
+    if (modH->u16discreteInputs != NULL) {
+        region.data         = modH->u16discreteInputs;
+        region.startAddress = modH->u16discreteInputsStartAdd;
+        region.size         = modH->u16discreteInputsNregs;
+    } else {
+        region.data         = modH->u16regs;
+        region.startAddress = 0;
+        region.size         = modH->u16regsize;
+    }
+    return region;
+}
+
+static mb_region_t getHRRegion(modbusHandler_t *modH)
+{
+    mb_region_t region;
+    if (modH->u16holdingRegs != NULL) {
+        region.data         = modH->u16holdingRegs;
+        region.startAddress = modH->u16holdingRegsStartAdd;
+        region.size         = modH->u16holdingRegsNregs;
+    } else {
+        region.data         = modH->u16regs;
+        region.startAddress = 0;
+        region.size         = modH->u16regsize;
+    }
+    return region;
+}
+
+static mb_region_t getIRRegion(modbusHandler_t *modH)
+{
+    mb_region_t region;
+    if (modH->u16inputRegs != NULL) {
+        region.data         = modH->u16inputRegs;
+        region.startAddress = modH->u16inputRegsStartAdd;
+        region.size         = modH->u16inputRegsNregs;
+    } else {
+        region.data         = modH->u16regs;
+        region.startAddress = 0;
+        region.size         = modH->u16regsize;
+    }
+    return region;
+}
+
+/* End of memory region helpers */
 
 
 const unsigned char fctsupported[] =
@@ -194,12 +305,11 @@ const unsigned char fctsupported[] =
 
 
 /**
- * @brief
- * Initialization for a Master/Slave.
- * this function will check the configuration parameters
- * of the modbus handler
- *
- * @param modH   modbus handler
+ * @brief Initializes a Modbus master or slave handler.
+ * Creates all required FreeRTOS objects (task, timers, semaphore, queue).
+ * Must be called before ModbusStart(). Blocks indefinitely on any
+ * allocation failure so errors are immediately visible during bring-up.
+ * @param modH  Pointer to an initialized modbusHandler_t structure
  */
 void ModbusInit(modbusHandler_t * modH)
 {
@@ -309,15 +419,11 @@ void ModbusInit(modbusHandler_t * modH)
 }
 
 /**
- * @brief
- * Start object.
- *
- * Call this AFTER calling begin() on the serial port, typically within setup().
- *
- * (If you call this function, then you should NOT call any of
- * ModbusRtu's own begin() functions.)
- *
- * @ingroup setup
+ * @brief Starts Modbus communication on a USART or USART-DMA port.
+ * Must be called after ModbusInit() and after the HAL UART peripheral is ready.
+ * Validates the handler configuration, starts the UART receive interrupt (or DMA),
+ * and resets traffic counters. For USB-CDC use ModbusStartCDC() instead.
+ * @param modH  Pointer to a previously initialized modbusHandler_t structure
  */
 void ModbusStart(modbusHandler_t * modH)
 {
@@ -344,9 +450,14 @@ void ModbusStart(modbusHandler_t * modH)
           	HAL_GPIO_WritePin(modH->EN_Port, modH->EN_Pin, GPIO_PIN_RESET);
           }
 
-          if (modH->uModbusType == MB_SLAVE &&  modH->u16regs == NULL )
+          if (modH->uModbusType == MB_SLAVE
+              && modH->u16regs           == NULL
+              && modH->u16coils          == NULL
+              && modH->u16discreteInputs == NULL
+              && modH->u16inputRegs      == NULL
+              && modH->u16holdingRegs    == NULL)
           {
-          	while(1); //ERROR define the DATA pointer shared through Modbus
+          	while(1); //ERROR define at least one DATA pointer shared through Modbus
           }
 
           //check that port is initialized
@@ -430,13 +541,25 @@ void ModbusStart(modbusHandler_t * modH)
 
 #if ENABLE_USB_CDC == 1
 extern void MX_USB_DEVICE_Init(void);
+/**
+ * @brief Starts Modbus communication on a USB-CDC port.
+ * Alternative to ModbusStart() for USB-CDC hardware. Validates the data
+ * pointer and resets traffic counters. Requires ENABLE_USB_CDC=1 in
+ * ModbusConfig.h. Currently validated on the STM32F103 Bluepill only.
+ * @param modH  Pointer to a previously initialized modbusHandler_t structure
+ */
 void ModbusStartCDC(modbusHandler_t * modH)
 {
 
 
-    if (modH->uModbusType == MB_SLAVE &&  modH->u16regs == NULL )
+    if (modH->uModbusType == MB_SLAVE
+        && modH->u16regs           == NULL
+        && modH->u16coils          == NULL
+        && modH->u16discreteInputs == NULL
+        && modH->u16inputRegs      == NULL
+        && modH->u16holdingRegs    == NULL)
     {
-    	while(1); //ERROR define the DATA pointer shared through Modbus
+    	while(1); //ERROR define at least one DATA pointer shared through Modbus
     }
 
     modH->u8lastRec = modH->u8BufferSize = 0;
@@ -445,9 +568,16 @@ void ModbusStartCDC(modbusHandler_t * modH)
 #endif
 
 
+/**
+ * @brief FreeRTOS timer callback for the T3.5 inter-frame silence timer.
+ * Fired when the T3.5 character-time gap expires, signalling that a complete
+ * Modbus RTU frame has been received. Notifies the corresponding Modbus task.
+ * For master handlers it also stops the query timeout timer.
+ * @param pxTimer  Handle of the expired timer (used to identify the handler)
+ */
 void vTimerCallbackT35(TimerHandle_t *pxTimer)
 {
-	//Notify that a stream has just arrived
+	//Notify the Modbus task that a complete frame has arrived
 	int i;
 	//TimerHandle_t aux;
 	for(i = 0; i < numberHandlers; i++)
@@ -464,9 +594,15 @@ void vTimerCallbackT35(TimerHandle_t *pxTimer)
 	}
 }
 
+/**
+ * @brief FreeRTOS timer callback for the master query timeout timer.
+ * Fired when the slave does not respond within u16timeOut milliseconds.
+ * Notifies the corresponding Modbus task with ERR_TIME_OUT.
+ * @param pxTimer  Handle of the expired timer (used to identify the handler)
+ */
 void vTimerCallbackTimeout(TimerHandle_t *pxTimer)
 {
-	//Notify that a stream has just arrived
+	//Notify the Modbus task that the query timed out
 	int i;
 	//TimerHandle_t aux;
 	for(i = 0; i < numberHandlers; i++)
@@ -483,6 +619,14 @@ void vTimerCallbackTimeout(TimerHandle_t *pxTimer)
 
 #if ENABLE_TCP ==1
 
+/**
+ * @brief Waits for an incoming TCP connection and receives one Modbus TCP frame (slave).
+ * Uses a round-robin slot allocator across NUMBERTCPCONN connection slots.
+ * Accepts new connections on free slots, applies an aging/timeout algorithm to
+ * idle connections, and parses the MBAP header to fill modH->u8Buffer.
+ * @param modH  Pointer to the slave modbusHandler_t structure
+ * @return true if a valid Modbus TCP frame was received, false otherwise
+ */
 bool TCPwaitConnData(modbusHandler_t *modH)
 {
   struct netbuf *inbuf;
@@ -588,6 +732,12 @@ bool TCPwaitConnData(modbusHandler_t *modH)
 }
 
 
+/**
+ * @brief Creates and binds the LWIP TCP listening socket for a Modbus TCP slave.
+ * Called once at slave task startup. Binds to modH->uTcpPort (defaults to 502)
+ * and puts the connection into LISTEN state. Blocks indefinitely on error.
+ * @param modH  Pointer to the slave modbusHandler_t structure
+ */
 void  TCPinitserver(modbusHandler_t *modH)
 {
       err_t err;
@@ -628,6 +778,12 @@ void  TCPinitserver(modbusHandler_t *modH)
 
 
 
+/**
+ * @brief FreeRTOS task body for a Modbus slave (USART, USART-DMA, USB-CDC, or TCP).
+ * Waits for an incoming frame, validates CRC and address, dispatches to the
+ * appropriate FC handler, and sends the response. Runs indefinitely.
+ * @param argument  Pointer to the modbusHandler_t for this slave instance
+ */
 void StartTaskModbusSlave(void *argument)
 {
 
@@ -784,6 +940,14 @@ void StartTaskModbusSlave(void *argument)
 
 
 
+/**
+ * @brief Enqueues a Modbus telegram for transmission by the master task (non-blocking).
+ * The telegram is added to the tail of the TX queue. The calling task must
+ * separately wait for a FreeRTOS task notification to know when the query
+ * completes. For a blocking version use ModbusQueryV2().
+ * @param modH     Pointer to the master modbusHandler_t structure
+ * @param telegram Modbus telegram describing the query (id, function code, address, count, data)
+ */
 void ModbusQuery(modbusHandler_t * modH, modbus_t telegram )
 {
 	//Add the telegram to the TX tail Queue of Modbus
@@ -797,6 +961,14 @@ void ModbusQuery(modbusHandler_t * modH, modbus_t telegram )
 	}
 }
 
+/**
+ * @brief Enqueues a Modbus telegram and blocks until the query completes (blocking).
+ * Combines ModbusQuery() and ulTaskNotifyTake() into a single call. Returns the
+ * notification value: OP_OK_QUERY on success, or an ERR_* code on failure.
+ * @param modH     Pointer to the master modbusHandler_t structure
+ * @param telegram Modbus telegram describing the query
+ * @return OP_OK_QUERY on success, ERR_TIME_OUT or other ERR_* code on failure
+ */
 uint32_t ModbusQueryV2(modbusHandler_t * modH, modbus_t telegram )
 {
 	//Add the telegram to the TX tail Queue of Modbus
@@ -816,6 +988,13 @@ uint32_t ModbusQueryV2(modbusHandler_t * modH, modbus_t telegram )
 
 
 
+/**
+ * @brief Injects a high-priority Modbus telegram at the head of the TX queue.
+ * Resets the existing queue and places the telegram at the front so it is
+ * processed before any pending queries. Use for urgent or diagnostic requests.
+ * @param modH     Pointer to the master modbusHandler_t structure
+ * @param telegram Modbus telegram to inject
+ */
 void ModbusQueryInject(modbusHandler_t * modH, modbus_t telegram )
 {
 	//Add the telegram to the TX head Queue of Modbus
@@ -826,6 +1005,11 @@ void ModbusQueryInject(modbusHandler_t * modH, modbus_t telegram )
 
 
 #if ENABLE_TCP ==1
+/**
+ * @brief Closes and deletes an LWIP TCP connection.
+ * Safe to call with a NULL pointer (no-op in that case).
+ * @param conn  LWIP netconn handle to close
+ */
 void ModbusCloseConn(struct netconn *conn)
 {
 
@@ -837,6 +1021,12 @@ void ModbusCloseConn(struct netconn *conn)
 
 }
 
+/**
+ * @brief Closes the current TCP connection slot and sets its pointer to NULL.
+ * Operates on modH->newconns[modH->newconnIndex]. After closing, the slot is
+ * free to accept a new incoming client connection.
+ * @param modH  Pointer to the modbusHandler_t whose active connection slot to close
+ */
 void ModbusCloseConnNull(modbusHandler_t * modH)
 {
 
@@ -854,16 +1044,13 @@ void ModbusCloseConnNull(modbusHandler_t * modH)
 
 
 /**
- * @brief
- * *** Only Modbus Master ***
- * Generate a query to an slave with a modbus_t telegram structure
- * The Master must be in COM_IDLE mode. After it, its state would be COM_WAITING.
- * This method has to be called only in loop() section.
- *
- * @see modbus_t
- * @param modH  modbus handler
- * @param modbus_t  modbus telegram structure (id, fct, ...)
- * @ingroup loop
+ * @brief Builds and transmits a Modbus RTU/TCP query frame (master only).
+ * Serializes the telegram into modH->u8Buffer, appends CRC (RTU), and
+ * calls sendTxBuffer(). Sets the master state to COM_WAITING on success.
+ * Called internally by StartTaskModbusMaster(); not intended for direct use.
+ * @param modH     Pointer to the master modbusHandler_t structure
+ * @param telegram Modbus telegram to transmit
+ * @return 0 on success, ERR_NOT_MASTER / ERR_POLLING / ERR_BAD_SLAVE_ID on error
  */
 int8_t SendQuery(modbusHandler_t *modH ,  modbus_t telegram )
 {
@@ -974,6 +1161,14 @@ int8_t SendQuery(modbusHandler_t *modH ,  modbus_t telegram )
 
 #if ENABLE_TCP == 1
 
+/**
+ * @brief Opens a TCP connection to the target slave for a master query.
+ * Reuses an existing connection in the slot if already open; opens a new one
+ * otherwise. Returns ERR_TIME_OUT if the connection attempt fails.
+ * @param modH     Pointer to the master modbusHandler_t structure
+ * @param telegram Pointer to the telegram containing the target IP and port
+ * @return ERR_OK on success, ERR_TIME_OUT or ERR_BAD_TCP_ID on failure
+ */
 static  mb_errot_t TCPconnectserver(modbusHandler_t * modH, modbus_t *telegram)
 {
 
@@ -1018,6 +1213,13 @@ static  mb_errot_t TCPconnectserver(modbusHandler_t * modH, modbus_t *telegram)
 }
 
 
+/**
+ * @brief Receives one Modbus TCP response frame from the current connection slot (master).
+ * Waits up to modH->u16timeOut ms for data, parses the MBAP header, and fills
+ * modH->u8Buffer. Used by the master task after sending a query over TCP.
+ * @param modH  Pointer to the master modbusHandler_t structure
+ * @return ERR_OK if a valid frame was received, ERR_TIMEOUT or LWIP error otherwise
+ */
 static mb_errot_t TCPgetRxBuffer(modbusHandler_t * modH)
 {
 
@@ -1075,6 +1277,13 @@ static mb_errot_t TCPgetRxBuffer(modbusHandler_t * modH)
 
 #endif
 
+/**
+ * @brief FreeRTOS task body for a Modbus master (USART, USART-DMA, USB-CDC, or TCP).
+ * Dequeues telegrams posted by ModbusQuery()/ModbusQueryV2(), calls SendQuery(),
+ * waits for the slave response, validates it, and notifies the calling task.
+ * Runs indefinitely.
+ * @param argument  Pointer to the modbusHandler_t for this master instance
+ */
 void StartTaskModbusMaster(void *argument)
 {
 
@@ -1151,7 +1360,7 @@ void StartTaskModbusMaster(void *argument)
 
 #if ENABLE_USB_CDC ==1 || ENABLE_TCP ==1
 
-      if(modH->xTypeHW == USART_HW) //TCP and USB_CDC use different methods to get the buffer
+      if(modH->xTypeHW == USART_HW || modH->xTypeHW == USART_HW_DMA) //TCP and USB_CDC use different methods to get the buffer
       {
     	  getRxBuffer(modH);
       }
@@ -1224,10 +1433,9 @@ void StartTaskModbusMaster(void *argument)
 }
 
 /**
- * This method processes functions 1 & 2 (for master)
- * This method puts the slave answer into master data buffer
- *
- * @ingroup register
+ * @brief Decodes a FC1/FC2 (read coils / discrete inputs) response into the master buffer.
+ * Unpacks the bit-stream from the slave response and stores each byte into modH->u16regs.
+ * @param modH  Pointer to the master modbusHandler_t structure
  */
 void get_FC1(modbusHandler_t *modH)
 {
@@ -1249,10 +1457,9 @@ void get_FC1(modbusHandler_t *modH)
 }
 
 /**
- * This method processes functions 3 & 4 (for master)
- * This method puts the slave answer into master data buffer
- *
- * @ingroup register
+ * @brief Decodes a FC3/FC4 (read holding / input registers) response into the master buffer.
+ * Copies the 16-bit register values from the slave response into modH->u16regs.
+ * @param modH  Pointer to the master modbusHandler_t structure
  */
 void get_FC3(modbusHandler_t *modH)
 {
@@ -1269,11 +1476,10 @@ void get_FC3(modbusHandler_t *modH)
 
 
 /**
- * @brief
- * This method validates master incoming messages
- *
- * @return 0 if OK, EXCEPTION if anything fails
- * @ingroup buffer
+ * @brief Validates the slave response received by the master.
+ * Checks CRC (RTU only), exception flag, and supported function code.
+ * @param modH  Pointer to the master modbusHandler_t structure
+ * @return 0 if OK, ERR_BAD_CRC, ERR_EXCEPTION, or EXC_FUNC_CODE on failure
  */
 uint8_t validateAnswer(modbusHandler_t *modH)
 {
@@ -1324,11 +1530,11 @@ uint8_t validateAnswer(modbusHandler_t *modH)
 
 
 /**
- * @brief
- * This method moves Serial buffer data to the Modbus u8Buffer.
- *
- * @return buffer size if OK, ERR_BUFF_OVERFLOW if u8BufferSize >= MAX_BUFFER
- * @ingroup buffer
+ * @brief Transfers received bytes from the ring buffer into modH->u8Buffer.
+ * Temporarily disables the UART RX interrupt (USART_HW) to avoid race conditions.
+ * On overflow, clears the ring buffer and returns ERR_BUFF_OVERFLOW.
+ * @param modH  Pointer to the modbusHandler_t structure
+ * @return Number of bytes copied, or ERR_BUFF_OVERFLOW on overflow
  */
 int16_t getRxBuffer(modbusHandler_t *modH)
 {
@@ -1365,11 +1571,11 @@ int16_t getRxBuffer(modbusHandler_t *modH)
 
 
 /**
- * @brief
- * This method validates slave incoming messages
- *
- * @return 0 if OK, EXCEPTION if anything fails
- * @ingroup modH Modbus handler
+ * @brief Validates a request frame received by the slave.
+ * Checks CRC (RTU only), supported function code, and address/count range
+ * against the appropriate memory region (coils, DI, HR, or IR).
+ * @param modH  Pointer to the slave modbusHandler_t structure
+ * @return 0 if OK, or an EXC_* / ERR_* exception code on failure
  */
 uint8_t validateRequest(modbusHandler_t *modH)
 {
@@ -1419,49 +1625,78 @@ uint8_t validateRequest(modbusHandler_t *modH)
 	        return EXC_FUNC_CODE;
 	    }
 
-	    // check start address & nb range
-	    uint16_t u16AdRegs = 0;
-	    uint16_t u16NRegs = 0;
+	    // check start address & nb range using the appropriate memory region
+	    mb_region_t region;
+	    uint16_t u16Ad;   // Modbus address from the frame
+	    uint16_t u16N;    // number of coils / registers from the frame
+	    uint32_t u32Offset; // address offset relative to region start (uint32 to avoid overflow)
+	    uint32_t u32NRegs;  // frame size check (uint32 to avoid overflow)
 
-	    //uint8_t u8regs;
 	    switch ( modH->u8Buffer[ FUNC ] )
 	    {
 	    case MB_FC_READ_COILS:
-	    case MB_FC_READ_DISCRETE_INPUT:
 	    case MB_FC_WRITE_MULTIPLE_COILS:
-	    	u16AdRegs = word( modH->u8Buffer[ ADD_HI ], modH->u8Buffer[ ADD_LO ]) / 16;
-	    	u16NRegs = word( modH->u8Buffer[ NB_HI ], modH->u8Buffer[ NB_LO ]) /16;
-	    	if(word( modH->u8Buffer[ NB_HI ], modH->u8Buffer[ NB_LO ]) % 16) u16NRegs++; // check for incomplete words
-	    	// verify address range
-	    	if((u16AdRegs + u16NRegs) > modH->u16regsize) return EXC_ADDR_RANGE;
-
-	    	//verify answer frame size in bytes
-
-	    	u16NRegs = word( modH->u8Buffer[ NB_HI ], modH->u8Buffer[ NB_LO ]) / 8;
-	    	if(word( modH->u8Buffer[ NB_HI ], modH->u8Buffer[ NB_LO ]) % 8) u16NRegs++;
-	    	u16NRegs = u16NRegs + 5; // adding the header  and CRC ( Slave address + Function code  + number of data bytes to follow + 2-byte CRC )
-	        if(u16NRegs > 256) return EXC_REGS_QUANT;
-
+	        region = getCoilsRegion(modH);
+	        u16Ad = word( modH->u8Buffer[ ADD_HI ], modH->u8Buffer[ ADD_LO ] );
+	        u16N  = word( modH->u8Buffer[ NB_HI  ], modH->u8Buffer[ NB_LO  ] );
+	        if (u16Ad < region.startAddress) return EXC_ADDR_RANGE;
+	        u32Offset = (uint32_t)u16Ad - region.startAddress;
+	        // verify that all requested bits fit inside the allocated words
+	        if (((u32Offset + u16N + 15u) / 16u) > (uint32_t)region.size) return EXC_ADDR_RANGE;
+	        // verify answer frame size in bytes
+	        u32NRegs = (uint32_t)u16N / 8u + ((u16N % 8u) ? 1u : 0u) + 5u;
+	        if (u32NRegs > 256u) return EXC_REGS_QUANT;
 	        break;
+
+	    case MB_FC_READ_DISCRETE_INPUT:
+	        region = getDIRegion(modH);
+	        u16Ad = word( modH->u8Buffer[ ADD_HI ], modH->u8Buffer[ ADD_LO ] );
+	        u16N  = word( modH->u8Buffer[ NB_HI  ], modH->u8Buffer[ NB_LO  ] );
+	        if (u16Ad < region.startAddress) return EXC_ADDR_RANGE;
+	        u32Offset = (uint32_t)u16Ad - region.startAddress;
+	        if (((u32Offset + u16N + 15u) / 16u) > (uint32_t)region.size) return EXC_ADDR_RANGE;
+	        u32NRegs = (uint32_t)u16N / 8u + ((u16N % 8u) ? 1u : 0u) + 5u;
+	        if (u32NRegs > 256u) return EXC_REGS_QUANT;
+	        break;
+
 	    case MB_FC_WRITE_COIL:
-	    	u16AdRegs = word( modH->u8Buffer[ ADD_HI ], modH->u8Buffer[ ADD_LO ]) / 16;
-	    	if(word( modH->u8Buffer[ ADD_HI ], modH->u8Buffer[ ADD_LO ]) % 16) u16AdRegs++;	// check for incomplete words
-	        if (u16AdRegs >= modH->u16regsize) return EXC_ADDR_RANGE;
+	        region = getCoilsRegion(modH);
+	        u16Ad = word( modH->u8Buffer[ ADD_HI ], modH->u8Buffer[ ADD_LO ] );
+	        if (u16Ad < region.startAddress) return EXC_ADDR_RANGE;
+	        u32Offset = (uint32_t)u16Ad - region.startAddress;
+	        if ((u32Offset / 16u) >= (uint32_t)region.size) return EXC_ADDR_RANGE;
 	        break;
-	    case MB_FC_WRITE_REGISTER :
-	    	u16AdRegs = word( modH->u8Buffer[ ADD_HI ], modH->u8Buffer[ ADD_LO ]);
-	        if (u16AdRegs >= modH-> u16regsize) return EXC_ADDR_RANGE;
-	        break;
-	    case MB_FC_READ_REGISTERS :
-	    case MB_FC_READ_INPUT_REGISTER :
-	    case MB_FC_WRITE_MULTIPLE_REGISTERS :
-	    	u16AdRegs = word( modH->u8Buffer[ ADD_HI ], modH->u8Buffer[ ADD_LO ]);
-	        u16NRegs = word( modH->u8Buffer[ NB_HI ], modH->u8Buffer[ NB_LO ]);
-	        if (( u16AdRegs + u16NRegs ) > modH->u16regsize) return EXC_ADDR_RANGE;
 
-	        //verify answer frame size in bytes
-	        u16NRegs = u16NRegs*2 + 5; // adding the header  and CRC
-	        if ( u16NRegs > 256 ) return EXC_REGS_QUANT;
+	    case MB_FC_WRITE_REGISTER:
+	        region = getHRRegion(modH);
+	        u16Ad = word( modH->u8Buffer[ ADD_HI ], modH->u8Buffer[ ADD_LO ] );
+	        if (u16Ad < region.startAddress) return EXC_ADDR_RANGE;
+	        u32Offset = (uint32_t)u16Ad - region.startAddress;
+	        if (u32Offset >= (uint32_t)region.size) return EXC_ADDR_RANGE;
+	        break;
+
+	    case MB_FC_READ_REGISTERS:
+	    case MB_FC_WRITE_MULTIPLE_REGISTERS:
+	        region = getHRRegion(modH);
+	        u16Ad = word( modH->u8Buffer[ ADD_HI ], modH->u8Buffer[ ADD_LO ] );
+	        u16N  = word( modH->u8Buffer[ NB_HI  ], modH->u8Buffer[ NB_LO  ] );
+	        if (u16Ad < region.startAddress) return EXC_ADDR_RANGE;
+	        u32Offset = (uint32_t)u16Ad - region.startAddress;
+	        if ((u32Offset + u16N) > (uint32_t)region.size) return EXC_ADDR_RANGE;
+	        // verify answer frame size in bytes
+	        u32NRegs = (uint32_t)u16N * 2u + 5u;
+	        if (u32NRegs > 256u) return EXC_REGS_QUANT;
+	        break;
+
+	    case MB_FC_READ_INPUT_REGISTER:
+	        region = getIRRegion(modH);
+	        u16Ad = word( modH->u8Buffer[ ADD_HI ], modH->u8Buffer[ ADD_LO ] );
+	        u16N  = word( modH->u8Buffer[ NB_HI  ], modH->u8Buffer[ NB_LO  ] );
+	        if (u16Ad < region.startAddress) return EXC_ADDR_RANGE;
+	        u32Offset = (uint32_t)u16Ad - region.startAddress;
+	        if ((u32Offset + u16N) > (uint32_t)region.size) return EXC_ADDR_RANGE;
+	        u32NRegs = (uint32_t)u16N * 2u + 5u;
+	        if (u32NRegs > 256u) return EXC_REGS_QUANT;
 	        break;
 	    }
 	    return 0; // OK, no exception code thrown
@@ -1469,12 +1704,10 @@ uint8_t validateRequest(modbusHandler_t *modH)
 }
 
 /**
- * @brief
- * This method creates a word from 2 bytes
- *
- * @return uint16_t (word)
- * @ingroup H  Most significant byte
- * @ingroup L  Less significant byte
+ * @brief Combines two bytes into a 16-bit word (big-endian byte order).
+ * @param H  Most significant byte
+ * @param L  Least significant byte
+ * @return 16-bit value with H as the high byte and L as the low byte
  */
 uint16_t word(uint8_t H, uint8_t L)
 {
@@ -1487,12 +1720,12 @@ uint16_t word(uint8_t H, uint8_t L)
 
 
 /**
- * @brief
- * This method calculates CRC
- *
- * @return uint16_t calculated CRC value for the message
- * @ingroup Buffer
- * @ingroup u8length
+ * @brief Calculates the Modbus RTU CRC-16 for a byte buffer.
+ * The returned value is already byte-swapped so that the low byte of the CRC
+ * comes first, matching the Modbus RTU frame format.
+ * @param Buffer    Pointer to the data bytes
+ * @param u8length  Number of bytes to include in the calculation
+ * @return CRC-16 value (byte-swapped, ready to append to the frame)
  */
 uint16_t calcCRC(uint8_t *Buffer, uint8_t u8length)
 {
@@ -1521,11 +1754,10 @@ uint16_t calcCRC(uint8_t *Buffer, uint8_t u8length)
 
 
 /**
- * @brief
- * This method builds an exception message
- *
- * @ingroup u8exception exception number
- * @ingroup modH modbus handler
+ * @brief Builds a Modbus exception response in modH->u8Buffer.
+ * Sets the function code high bit and writes the exception code byte.
+ * @param u8exception  Modbus exception code (EXC_FUNC_CODE, EXC_ADDR_RANGE, etc.)
+ * @param modH         Pointer to the slave modbusHandler_t structure
  */
 void buildException( uint8_t u8exception, modbusHandler_t *modH )
 {
@@ -1543,15 +1775,13 @@ extern uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len);
 #endif
 
 /**
- * @brief
- * This method transmits u8Buffer to Serial line.
- * Only if u8txenpin != 0, there is a flow handling in order to keep
- * the RS485 transceiver in output state as long as the message is being sent.
- * This is done with TC bit.
- * The CRC is appended to the buffer before starting to send it.
- *
- * @return nothing
- * @ingroup modH Modbus handler
+ * @brief Transmits modH->u8Buffer over the configured hardware interface.
+ * For USART/DMA: appends CRC, drives EN_Port high for RS-485 transmit enable,
+ * sends via HAL interrupt or DMA, waits for the TC flag, then returns EN_Port
+ * low (receive mode). For USB-CDC: calls CDC_Transmit_FS(). For TCP: prepends
+ * the MBAP header and sends via LWIP netconn. Broadcast requests from a slave
+ * are silently discarded (no response sent). Resets the timeout timer on master.
+ * @param modH  Pointer to the modbusHandler_t structure
  */
 static void sendTxBuffer(modbusHandler_t *modH)
 {
@@ -1729,8 +1959,13 @@ int8_t process_FC1(modbusHandler_t *modH )
     uint8_t u8CopyBufferSize;
     uint16_t u16currentCoil, u16coil;
 
-    // get the first and last coil from the message
-    uint16_t u16StartCoil = word( modH->u8Buffer[ ADD_HI ], modH->u8Buffer[ ADD_LO ] );
+    // select the region based on whether this is FC1 (coils) or FC2 (discrete inputs)
+    mb_region_t region = (modH->u8Buffer[ FUNC ] == MB_FC_READ_COILS)
+                         ? getCoilsRegion(modH) : getDIRegion(modH);
+
+    // get start coil as an offset from the beginning of the region array
+    uint16_t u16StartCoil = word( modH->u8Buffer[ ADD_HI ], modH->u8Buffer[ ADD_LO ] )
+                            - region.startAddress;
     uint16_t u16Coilno = word( modH->u8Buffer[ NB_HI ], modH->u8Buffer[ NB_LO ] );
 
     // put the number of bytes in the outcoming message
@@ -1752,7 +1987,7 @@ int8_t process_FC1(modbusHandler_t *modH )
         bitWrite(
         	modH->u8Buffer[ modH->u8BufferSize ],
             u8bitsno,
-		    bitRead( modH->u16regs[ u16currentRegister ], u8currentBit ) );
+		    bitRead( region.data[ u16currentRegister ], u8currentBit ) );
         u8bitsno ++;
 
         if (u8bitsno > 7)
@@ -1780,8 +2015,12 @@ int8_t process_FC1(modbusHandler_t *modH )
  */
 int8_t process_FC3(modbusHandler_t *modH)
 {
+    // select the region based on whether this is FC3 (holding regs) or FC4 (input regs)
+    mb_region_t region = (modH->u8Buffer[ FUNC ] == MB_FC_READ_REGISTERS)
+                         ? getHRRegion(modH) : getIRRegion(modH);
 
-    uint16_t u16StartAdd = word( modH->u8Buffer[ ADD_HI ], modH->u8Buffer[ ADD_LO ] );
+    uint16_t u16StartAdd = word( modH->u8Buffer[ ADD_HI ], modH->u8Buffer[ ADD_LO ] )
+                           - region.startAddress;
     uint8_t u8regsno = word( modH->u8Buffer[ NB_HI ], modH->u8Buffer[ NB_LO ] );
     uint8_t u8CopyBufferSize;
     uint16_t i;
@@ -1791,9 +2030,9 @@ int8_t process_FC3(modbusHandler_t *modH)
 
     for (i = u16StartAdd; i < u16StartAdd + u8regsno; i++)
     {
-    	modH->u8Buffer[ modH->u8BufferSize ] = highByte(modH->u16regs[i]);
+    	modH->u8Buffer[ modH->u8BufferSize ] = highByte(region.data[i]);
     	modH->u8BufferSize++;
-    	modH->u8Buffer[ modH->u8BufferSize ] = lowByte(modH->u16regs[i]);
+    	modH->u8Buffer[ modH->u8BufferSize ] = lowByte(region.data[i]);
     	modH->u8BufferSize++;
     }
     u8CopyBufferSize = modH->u8BufferSize +2;
@@ -1815,7 +2054,12 @@ int8_t process_FC5( modbusHandler_t *modH )
     uint8_t u8currentBit;
     uint16_t u16currentRegister;
     uint8_t u8CopyBufferSize;
-    uint16_t u16coil = word( modH->u8Buffer[ ADD_HI ], modH->u8Buffer[ ADD_LO ] );
+
+    mb_region_t region = getCoilsRegion(modH);
+
+    // convert Modbus coil address to a region-relative bit index
+    uint16_t u16coil = word( modH->u8Buffer[ ADD_HI ], modH->u8Buffer[ ADD_LO ] )
+                       - region.startAddress;
 
     // point to the register and its bit
     u16currentRegister = (u16coil / 16);
@@ -1823,7 +2067,7 @@ int8_t process_FC5( modbusHandler_t *modH )
 
     // write to coil
     bitWrite(
-    	modH->u16regs[ u16currentRegister ],
+    	region.data[ u16currentRegister ],
         u8currentBit,
 		modH->u8Buffer[ NB_HI ] == 0xff );
 
@@ -1846,12 +2090,14 @@ int8_t process_FC5( modbusHandler_t *modH )
  */
 int8_t process_FC6(modbusHandler_t *modH )
 {
+    mb_region_t region = getHRRegion(modH);
 
-    uint16_t u16add = word( modH->u8Buffer[ ADD_HI ], modH->u8Buffer[ ADD_LO ] );
+    uint16_t u16add = word( modH->u8Buffer[ ADD_HI ], modH->u8Buffer[ ADD_LO ] )
+                      - region.startAddress;
     uint8_t u8CopyBufferSize;
     uint16_t u16val = word( modH->u8Buffer[ NB_HI ], modH->u8Buffer[ NB_LO ] );
 
-    modH->u16regs[ u16add ] = u16val;
+    region.data[ u16add ] = u16val;
 
     // keep the same header
     modH->u8BufferSize = RESPONSE_SIZE;
@@ -1878,8 +2124,11 @@ int8_t process_FC15( modbusHandler_t *modH )
     uint16_t u16currentCoil, u16coil;
     bool bTemp;
 
-    // get the first and last coil from the message
-    uint16_t u16StartCoil = word( modH->u8Buffer[ ADD_HI ], modH->u8Buffer[ ADD_LO ] );
+    mb_region_t region = getCoilsRegion(modH);
+
+    // get start coil as an offset from the beginning of the region array
+    uint16_t u16StartCoil = word( modH->u8Buffer[ ADD_HI ], modH->u8Buffer[ ADD_LO ] )
+                            - region.startAddress;
     uint16_t u16Coilno = word( modH->u8Buffer[ NB_HI ], modH->u8Buffer[ NB_LO ] );
 
 
@@ -1898,7 +2147,7 @@ int8_t process_FC15( modbusHandler_t *modH )
                     u8bitsno );
 
         bitWrite(
-            modH->u16regs[ u16currentRegister ],
+            region.data[ u16currentRegister ],
             u8currentBit,
             bTemp );
 
@@ -1912,7 +2161,7 @@ int8_t process_FC15( modbusHandler_t *modH )
     }
 
     // send outcoming message
-    // it's just a copy of the incomping frame until 6th byte
+    // it's just a copy of the incoming frame until 6th byte
     modH->u8BufferSize         = 6;
     u8CopyBufferSize = modH->u8BufferSize +2;
     sendTxBuffer(modH);
@@ -1929,7 +2178,10 @@ int8_t process_FC15( modbusHandler_t *modH )
  */
 int8_t process_FC16(modbusHandler_t *modH )
 {
-    uint16_t u16StartAdd = modH->u8Buffer[ ADD_HI ] << 8 | modH->u8Buffer[ ADD_LO ];
+    mb_region_t region = getHRRegion(modH);
+
+    uint16_t u16StartAdd = (modH->u8Buffer[ ADD_HI ] << 8 | modH->u8Buffer[ ADD_LO ])
+                           - region.startAddress;
     uint16_t u16regsno = modH->u8Buffer[ NB_HI ] << 8 | modH->u8Buffer[ NB_LO ];
     uint8_t u8CopyBufferSize;
     uint16_t i;
@@ -1947,7 +2199,7 @@ int8_t process_FC16(modbusHandler_t *modH )
         		modH->u8Buffer[ (BYTE_CNT + 1) + i * 2 ],
 				modH->u8Buffer[ (BYTE_CNT + 2) + i * 2 ]);
 
-        modH->u16regs[ u16StartAdd + i ] = temp;
+        region.data[ u16StartAdd + i ] = temp;
     }
     u8CopyBufferSize = modH->u8BufferSize +2;
     sendTxBuffer(modH);
