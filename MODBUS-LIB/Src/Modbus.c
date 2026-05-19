@@ -187,8 +187,6 @@ uint8_t RingGetNBytes(modbusRingBuffer_t *xRingBuffer, uint8_t *buffer, uint8_t 
 		buffer[uCounter] = xRingBuffer->uxBuffer[xRingBuffer->u8start];
 		xRingBuffer->u8start = (xRingBuffer->u8start + 1) % MAX_BUFFER;
 	}
-	xRingBuffer->u8available = xRingBuffer->u8available - uCounter;
-	xRingBuffer->overflow = false;
 	RingClear(xRingBuffer);
 
 	return uCounter;
