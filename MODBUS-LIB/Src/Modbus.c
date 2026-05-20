@@ -88,7 +88,7 @@ uint8_t numberHandlers = 0;
 
 
 static void sendTxBuffer(modbusHandler_t *modH);
-static int16_t getRxBuffer(modbusHandler_t *modH);
+static mb_err_op_t getRxBuffer(modbusHandler_t *modH);
 static uint8_t validateAnswer(modbusHandler_t *modH);
 static void buildException( uint8_t u8exception, modbusHandler_t *modH );
 static uint8_t validateRequest(modbusHandler_t * modH);
@@ -1532,12 +1532,12 @@ uint8_t validateAnswer(modbusHandler_t *modH)
  * Temporarily disables the UART RX interrupt (USART_HW) to avoid race conditions.
  * On overflow, clears the ring buffer and returns ERR_BUFF_OVERFLOW.
  * @param modH  Pointer to the modbusHandler_t structure
- * @return Number of bytes copied, or ERR_BUFF_OVERFLOW on overflow
+ * @return Return Error and Operation code ERR_BUFF_OVERFLOW on overflow
  */
-int16_t getRxBuffer(modbusHandler_t *modH)
+mb_err_op_t getRxBuffer(modbusHandler_t *modH)
 {
 
-    int16_t i16result;
+    mb_err_op_t rxBufferErrorStatus= OP_OK_QUERY;
 
     if(modH->xTypeHW == USART_HW)
     {
@@ -1547,13 +1547,12 @@ int16_t getRxBuffer(modbusHandler_t *modH)
 	if (modH->xBufferRX.overflow)
     {
        	RingClear(&modH->xBufferRX); // clean up the overflowed buffer
-       	i16result =  ERR_BUFF_OVERFLOW;
+       	rxBufferErrorStatus =  ERR_BUFF_OVERFLOW;
     }
 	else
 	{
 		modH->u8BufferSize = RingGetAllBytes(&modH->xBufferRX, modH->u8Buffer);
 		modH->u16InCnt++;
-		i16result = modH->u8BufferSize;
 	}
 
 	if(modH->xTypeHW == USART_HW)
@@ -1561,10 +1560,8 @@ int16_t getRxBuffer(modbusHandler_t *modH)
 		HAL_UART_Receive_IT(modH->port, &modH->dataRX, 1);
 	}
 
-    return i16result;
+    return rxBufferErrorStatus;
 }
-
-
 
 
 
