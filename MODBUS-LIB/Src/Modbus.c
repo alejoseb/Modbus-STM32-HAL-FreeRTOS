@@ -165,7 +165,9 @@ void RingAdd(modbusRingBuffer_t *xRingBuffer, uint8_t u8Val)
  */
 uint8_t RingGetAllBytes(modbusRingBuffer_t *xRingBuffer, uint8_t *buffer)
 {
-	return RingGetNBytes(xRingBuffer, buffer, xRingBuffer->u8available);
+	uint8_t count = RingGetNBytes(xRingBuffer, buffer, xRingBuffer->u8available);
+	RingClear(xRingBuffer);
+	return count;
 }
 
 /**
@@ -173,21 +175,20 @@ uint8_t RingGetAllBytes(modbusRingBuffer_t *xRingBuffer, uint8_t *buffer)
  * Must be called with the USART RX interrupt disabled.
  * @param xRingBuffer  Pointer to the ring buffer
  * @param buffer       Destination byte array
- * @param uNumber      Maximum number of bytes to read
+ * @param uNumber      Maximum number of bytes to read, must be <= size of buffer
  * @return Number of bytes actually copied
  */
 uint8_t RingGetNBytes(modbusRingBuffer_t *xRingBuffer, uint8_t *buffer, uint8_t uNumber)
 {
-	uint8_t uCounter;
-	if(xRingBuffer->u8available == 0  || uNumber == 0 ) return 0;
-	if(uNumber > MAX_BUFFER) return 0;
-
-	for(uCounter = 0; uCounter < uNumber && uCounter< xRingBuffer->u8available ; uCounter++)
+	uint8_t uCounter = 0;
+	uint8_t uNumBytestoCopy = (uNumber < xRingBuffer->u8available) ? uNumber : xRingBuffer->u8available;	// we don't try to copy more than available
+	
+	while(uCounter < uNumBytestoCopy)
 	{
-		buffer[uCounter] = xRingBuffer->uxBuffer[xRingBuffer->u8start];
+		buffer[uCounter++] = xRingBuffer->uxBuffer[xRingBuffer->u8start];
 		xRingBuffer->u8start = (xRingBuffer->u8start + 1) % MAX_BUFFER;
 	}
-	RingClear(xRingBuffer);
+	xRingBuffer->u8available -= uCounter;
 
 	return uCounter;
 }
