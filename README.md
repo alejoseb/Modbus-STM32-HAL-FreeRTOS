@@ -210,4 +210,4 @@ Windows: https://sourceforge.net/projects/modrssim2/
 - ~~Improve the queue for data reception; the current method is too heavy it should be replaced with a simple buffer, a stream, or another FreeRTOS primitive.~~ Solved Queue replaced by a Ring Buffer (03/19/2021)
 - ~~Test with Rs485 transceivers (implemented but not tested)~~ Verified with MAX485 transceivers (01/03/2021)
 - ~~MODBUS TCP implementation~~ (28/04/2021)
-- Refactor the Modbus.c File, it is more than 1200 lines of code and difficult to edit or reaosn about it. Also it is not following the best practices.
+- Refactor the Modbus.c File, it is more than 1200 lines of code and difficult to edit or reason about it. Also it is not following the best practices.
