@@ -1116,7 +1116,7 @@ int8_t SendQuery(modbusHandler_t *modH ,  modbus_t telegram )
 
 	    for (uint16_t i = 0; i < u8bytesno; i++)
 	    {
-	        if(i%2)
+	        if(i%2 == 0)
 	        {
 	        	modH->u8Buffer[ modH->u8BufferSize ] = lowByte( telegram.u16reg[ i/2 ] );
 	        }
