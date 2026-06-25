@@ -1055,7 +1055,7 @@ int8_t SendQuery(modbusHandler_t *modH ,  modbus_t telegram )
 {
 
 
-	uint8_t u8regsno, u8bytesno;
+	uint8_t u8bytesno;
 	uint8_t  error = 0;
 	xSemaphoreTake(modH->ModBusSphrHandle , portMAX_DELAY); //before processing the message get the semaphore
 
@@ -1101,13 +1101,7 @@ int8_t SendQuery(modbusHandler_t *modH ,  modbus_t telegram )
 	    modH->u8BufferSize = 6;
 	    break;
 	case MB_FC_WRITE_MULTIPLE_COILS: // TODO: implement "sending coils"
-	    u8regsno = telegram.u16CoilsNo / 16;
-	    u8bytesno = u8regsno * 2;
-	    if ((telegram.u16CoilsNo % 16) != 0)
-	    {
-	        u8bytesno++;
-	        u8regsno++;
-	    }
+	    u8bytesno = (telegram.u16CoilsNo + 7) / 8;   // ceil(N/8)
 
 	    modH->u8Buffer[ NB_HI ]      = highByte(telegram.u16CoilsNo );
 	    modH->u8Buffer[ NB_LO ]      = lowByte( telegram.u16CoilsNo );
