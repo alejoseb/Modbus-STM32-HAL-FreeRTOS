@@ -195,7 +195,7 @@ void StartTaskMaster(void *argument)
             ModbusDATA[0] = ~ModbusDATA[0];
             ModbusQuery(&ModbusH, telegram[0]); // make a query
     	    u32NotificationValue = ulTaskNotifyTake(pdTRUE, portMAX_DELAY); // block until query finishes or timeouts
-    	    if(u32NotificationValue != ERR_OK_QUERY)
+    	    if(u32NotificationValue != OP_OK_QUERY)
     	    {
     	     //handle error
     	    	ModbusDATA[1]++;
@@ -204,7 +204,7 @@ void StartTaskMaster(void *argument)
     	    //ModbusDATA[0]++;
     	    ModbusQuery(&ModbusH, telegram[1]); // make a query
     	    u32NotificationValue = ulTaskNotifyTake(pdTRUE, portMAX_DELAY); // block until query finishes or timeouts
-    	    if(u32NotificationValue != ERR_OK_QUERY)
+    	    if(u32NotificationValue != OP_OK_QUERY)
     	    {
     	    	ModbusDATA[2]++;
     	    }

@@ -41,10 +41,6 @@
 
 #include "cmsis_os.h"
 
-#if defined(LWIP_PROVIDE_ERRNO)
-int errno;
-#endif
-
 /*-----------------------------------------------------------------------------------*/
 //  Creates an empty mailbox.
 err_t sys_mbox_new(sys_mbox_t *mbox, int size)

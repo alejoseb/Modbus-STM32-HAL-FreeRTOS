@@ -129,7 +129,7 @@ void StartModbusTestTask(void *argument)
 
 	    ModbusQuery(&ModbusH, telegram); // make a query
 	    u32NotificationValue = ulTaskNotifyTake(pdTRUE, portMAX_DELAY); // block until query finishes
-	    if(u32NotificationValue != ERR_OK_QUERY)
+	    if(u32NotificationValue != OP_OK_QUERY)
 	    {
 	     //handle error
 	     //  while(1);

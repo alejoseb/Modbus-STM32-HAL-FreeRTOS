@@ -122,8 +122,8 @@ static mb_region_t getIRRegion(modbusHandler_t *modH);
 
 static bool TCPwaitConnData(modbusHandler_t *modH);
 static void  TCPinitserver(modbusHandler_t *modH);
-static mb_errot_t TCPconnectserver(modbusHandler_t * modH, modbus_t *telegram);
-static mb_errot_t TCPgetRxBuffer(modbusHandler_t * modH);
+static mb_err_op_t TCPconnectserver(modbusHandler_t * modH, modbus_t *telegram);
+static mb_err_op_t TCPgetRxBuffer(modbusHandler_t * modH);
 
 #endif
 
@@ -1162,7 +1162,7 @@ int8_t SendQuery(modbusHandler_t *modH ,  modbus_t telegram )
  * @param telegram Pointer to the telegram containing the target IP and port
  * @return ERR_OK on success, ERR_TIME_OUT or ERR_BAD_TCP_ID on failure
  */
-static  mb_errot_t TCPconnectserver(modbusHandler_t * modH, modbus_t *telegram)
+static  mb_err_op_t TCPconnectserver(modbusHandler_t * modH, modbus_t *telegram)
 {
 
 
@@ -1213,7 +1213,7 @@ static  mb_errot_t TCPconnectserver(modbusHandler_t * modH, modbus_t *telegram)
  * @param modH  Pointer to the master modbusHandler_t structure
  * @return ERR_OK if a valid frame was received, ERR_TIMEOUT or LWIP error otherwise
  */
-static mb_errot_t TCPgetRxBuffer(modbusHandler_t * modH)
+static mb_err_op_t TCPgetRxBuffer(modbusHandler_t * modH)
 {
 
 	struct netbuf *inbuf;
