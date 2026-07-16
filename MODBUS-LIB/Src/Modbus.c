@@ -1636,6 +1636,15 @@ uint8_t validateRequest(modbusHandler_t *modH)
 	        // verify answer frame size in bytes
 	        u32NRegs = (uint32_t)u16N / 8u + ((u16N % 8u) ? 1u : 0u) + 5u;
 	        if (u32NRegs > 256u) return EXC_REGS_QUANT;
+	        // for FC15, verify the physically received frame actually contains the
+	        // declared coil data bytes before process_FC15() trusts u8Buffer beyond
+	        // the 7-byte header (stale/OOB u8Buffer content otherwise gets copied
+	        // into the coil memory region when the frame is shorter than declared)
+	        if (modH->u8Buffer[ FUNC ] == MB_FC_WRITE_MULTIPLE_COILS)
+	        {
+	            uint32_t u32ExpectedSize = (uint32_t)(BYTE_CNT + 1) + (((uint32_t)u16N + 7u) / 8u) + 2u;
+	            if ((uint32_t)modH->u8BufferSize < u32ExpectedSize) return EXC_ADDR_RANGE;
+	        }
 	        break;
 
 	    case MB_FC_READ_DISCRETE_INPUT:
@@ -1676,6 +1685,16 @@ uint8_t validateRequest(modbusHandler_t *modH)
 	        // verify answer frame size in bytes
 	        u32NRegs = (uint32_t)u16N * 2u + 5u;
 	        if (u32NRegs > 256u) return EXC_REGS_QUANT;
+	        // for FC16, verify the physically received frame actually contains the
+	        // declared register data bytes before process_FC16() trusts u8Buffer
+	        // beyond the 7-byte header (stale/OOB u8Buffer content otherwise gets
+	        // copied into the holding-register memory region when the frame is
+	        // shorter than declared)
+	        if (modH->u8Buffer[ FUNC ] == MB_FC_WRITE_MULTIPLE_REGISTERS)
+	        {
+	            uint32_t u32ExpectedSize = (uint32_t)(BYTE_CNT + 1) + (uint32_t)u16N * 2u + 2u;
+	            if ((uint32_t)modH->u8BufferSize < u32ExpectedSize) return EXC_ADDR_RANGE;
+	        }
 	        break;
 
 	    case MB_FC_READ_INPUT_REGISTER:
