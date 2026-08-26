@@ -1621,6 +1621,12 @@ uint8_t validateRequest(modbusHandler_t *modH)
 	    uint16_t u16N;    // number of coils / registers from the frame
 	    uint32_t u32Offset; // address offset relative to region start (uint32 to avoid overflow)
 	    uint32_t u32NRegs;  // frame size check (uint32 to avoid overflow)
+	    // Modbus caps an RTU-style ADU at 256 bytes (1 addr + up to 253 PDU + 2 CRC), but
+	    // u8Buffer itself is only MAX_BUFFER bytes long (128 by default) -- process_FC1/FC3
+	    // write the response directly into u8Buffer, so the smaller of the two must gate how
+	    // large a response N registers/coils is allowed to require, or a spec-legal request
+	    // (e.g. FC03 reading 100 registers) overflows u8Buffer.
+	    const uint32_t u32MaxFrameSize = ((uint32_t)MAX_BUFFER < 256u) ? (uint32_t)MAX_BUFFER : 256u;
 
 	    switch ( modH->u8Buffer[ FUNC ] )
 	    {
@@ -1635,7 +1641,7 @@ uint8_t validateRequest(modbusHandler_t *modH)
 	        if (((u32Offset + u16N + 15u) / 16u) > (uint32_t)region.size) return EXC_ADDR_RANGE;
 	        // verify answer frame size in bytes
 	        u32NRegs = (uint32_t)u16N / 8u + ((u16N % 8u) ? 1u : 0u) + 5u;
-	        if (u32NRegs > 256u) return EXC_REGS_QUANT;
+	        if (u32NRegs > u32MaxFrameSize) return EXC_REGS_QUANT;
 	        // for FC15, verify the physically received frame actually contains the
 	        // declared coil data bytes before process_FC15() trusts u8Buffer beyond
 	        // the 7-byte header (stale/OOB u8Buffer content otherwise gets copied
@@ -1655,7 +1661,7 @@ uint8_t validateRequest(modbusHandler_t *modH)
 	        u32Offset = (uint32_t)u16Ad - region.startAddress;
 	        if (((u32Offset + u16N + 15u) / 16u) > (uint32_t)region.size) return EXC_ADDR_RANGE;
 	        u32NRegs = (uint32_t)u16N / 8u + ((u16N % 8u) ? 1u : 0u) + 5u;
-	        if (u32NRegs > 256u) return EXC_REGS_QUANT;
+	        if (u32NRegs > u32MaxFrameSize) return EXC_REGS_QUANT;
 	        break;
 
 	    case MB_FC_WRITE_COIL:
@@ -1684,7 +1690,7 @@ uint8_t validateRequest(modbusHandler_t *modH)
 	        if ((u32Offset + u16N) > (uint32_t)region.size) return EXC_ADDR_RANGE;
 	        // verify answer frame size in bytes
 	        u32NRegs = (uint32_t)u16N * 2u + 5u;
-	        if (u32NRegs > 256u) return EXC_REGS_QUANT;
+	        if (u32NRegs > u32MaxFrameSize) return EXC_REGS_QUANT;
 	        // for FC16, verify the physically received frame actually contains the
 	        // declared register data bytes before process_FC16() trusts u8Buffer
 	        // beyond the 7-byte header (stale/OOB u8Buffer content otherwise gets
@@ -1705,7 +1711,7 @@ uint8_t validateRequest(modbusHandler_t *modH)
 	        u32Offset = (uint32_t)u16Ad - region.startAddress;
 	        if ((u32Offset + u16N) > (uint32_t)region.size) return EXC_ADDR_RANGE;
 	        u32NRegs = (uint32_t)u16N * 2u + 5u;
-	        if (u32NRegs > 256u) return EXC_REGS_QUANT;
+	        if (u32NRegs > u32MaxFrameSize) return EXC_REGS_QUANT;
 	        break;
 	    }
 	    return 0; // OK, no exception code thrown
